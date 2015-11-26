@@ -1,5 +1,8 @@
 *.iml
+*.info
 /dist
 /out
+/src/Parser.hs
 /src/Lexer.hs
+/Main
 /.idea

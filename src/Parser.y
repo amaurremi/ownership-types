@@ -81,7 +81,7 @@ data Context = Context Name
 %monad { Except String } { (>>=) } { return }
 %error { parseError }
 
-%name progR ProgR
+%name parse ProgR
 
 %%
 
@@ -128,7 +128,7 @@ ContextsR : ContextR                                    { [$1] }
 OwnTypeR  : STR '<' ContextR '|' ContextsR '>'          { OwnershipType $1 $2 $3 }
           | STR '<' ContextR '>'                        { OwnerShipType $1 $2 [] }
 
-FieldsR   : FieldR                                      { [$1] }
+FieldsR   : {- empty -}                                 { [] }
           | FieldR FieldsR                              { $1 : $2 }
 
 FieldR    : OwnTypeR VarNameR ';'                       { Field $1 $2 }
@@ -141,7 +141,7 @@ ArgsR     : {- empty -}                                 { [] }
 
 ArgR      : OwnTypeR VarNameR                           { VarDec $1 $2 }
 
-MethodsR  : MethodR                                     { [$1] }
+MethodsR  : {- empty -}                                 { [] }
           | MethodR MethodsR                            { $1 : $2 }
 
 {
