@@ -1,8 +1,5 @@
 {
-module Lexer (
-    lexer,
-    Token(...)
-) where
+module Lexer where
 }
 
 %wrapper "basic"
@@ -21,6 +18,7 @@ tokens :-
     owner                                   { \_ -> TokOwner }
     null                                    { \_ -> TokNull }
     void                                    { \_ -> TokVoid }
+    this                                    { \_ -> TokThis }
 
     $alpha [$alpha $digit \_ \']*           { \s -> TokName s }        -- name
 
@@ -45,6 +43,7 @@ data Token =
            | TokOwner
            | TokNull
            | TokVoid
+           | TokThis
            | TokName String
            | TokEq
            | TokNeq

@@ -4,54 +4,15 @@ module Parser (
     Field,
     Method,
     VarDec,
-    VarName(...),
+    VarName(..),
     Name,
-    Expr(...),
+    Expr(..),
     OwnershipType,
-    Context(...),
+    Context(..),
     ContextParam
 ) where
 
 import Lexer
-
-type Defn = Defn Name [ContextParam] [Field] [Method]
-    deriving (Eq, Show)
-
-type Field = Field OwnershipType Name
-    deriving (Eq, Show)
-
-type Method = Method OwnershipType Name [VarDec] Expr
-    deriving (Eq, Show)
-
-data VarName = VarName Name
-             | This
-    deriving (Eq, Show)
-
-type VarDec = VarDec OwnershipType VarName
-    deriving (Eq, Show)
-
-type Name = String
-
-data Expr = New OwnershipType
-          | Null
-          | Seq Expr Expr
-          | VarExpr VarName
-          | Asgn VarName Expr
-          | FieldRead Expr Name
-          | FieldWrite Expr Name Expr
-          | Invoc Expr Name [Expr]
-    deriving (Eq, Show)
-
-type Prog = Prog [Defn] [VarDec] Expr
-
-type OwnershipType = OwnershipType Name Context [Context]
-    deriving (Eq, Show)
-
-data Context = Context Name
-             | Rep
-             | NoRep
-             | Owner
-    deriving (Eq, Show)
 }
 
 %tokentype { Token }
@@ -78,7 +39,6 @@ data Context = Context Name
     '='   { TokAsgn }
     '|'   { TokVert }
 
-%monad { Except String } { (>>=) } { return }
 %error { parseError }
 
 %name parse ProgR
@@ -126,7 +86,7 @@ ContextsR : ContextR                                    { [$1] }
           | ContextR ',' ContextsR                      { $1 : $2 }
 
 OwnTypeR  : STR '<' ContextR '|' ContextsR '>'          { OwnershipType $1 $2 $3 }
-          | STR '<' ContextR '>'                        { OwnerShipType $1 $2 [] }
+          | STR '<' ContextR '>'                        { OwnershipType $1 $2 [] }
 
 FieldsR   : {- empty -}                                 { [] }
           | FieldR FieldsR                              { $1 : $2 }
@@ -145,5 +105,46 @@ MethodsR  : {- empty -}                                 { [] }
           | MethodR MethodsR                            { $1 : $2 }
 
 {
-parseError _ = throwError "!Parse Error"
+data Defn = Defn Name [Context] [Field] [Method]
+    deriving (Eq, Show)
+
+data Field = Field OwnershipType Name
+    deriving (Eq, Show)
+
+data Method = Method OwnershipType Name [VarDec] Expr
+    deriving (Eq, Show)
+
+data VarName = VarName Name
+             | This
+    deriving (Eq, Show)
+
+data VarDec = VarDec OwnershipType VarName
+    deriving (Eq, Show)
+
+type Name = String
+
+data Expr = New OwnershipType
+          | Null
+          | Seq Expr Expr
+          | VarExpr VarName
+          | Asgn VarName Expr
+          | FieldRead Expr Name
+          | FieldWrite Expr Name Expr
+          | Invoc Expr Name [Expr]
+    deriving (Eq, Show)
+
+data Prog = Prog [Defn] [VarDec] Expr
+    deriving (Show)
+
+data OwnershipType = OwnershipType Name Context [Context]
+    deriving (Eq, Show)
+
+data Context = Context Name
+             | Rep
+             | NoRep
+             | Owner
+    deriving (Eq, Show)
+
+parseError :: [Token] -> a
+parseError _ = error "Parse error"
 }
