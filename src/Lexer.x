@@ -1,5 +1,8 @@
 {
-module Lexer (lexer) where
+module Lexer (
+    lexer,
+    Token(...)
+) where
 }
 
 %wrapper "basic"
@@ -11,31 +14,53 @@ tokens :-
     $white+                                 ;                           -- whitespace
     "//".*                                  ;                           -- comment
 
-    class                                   { \_ -> Class }
-    new                                     { \_ -> New }
-    rep                                     { \_ -> Rep }
-    norep                                   { \_ -> NoRep }
-    owner                                   { \_ -> Owner }
-    null                                    { \_ -> Null }
-    void                                    { \_ -> Void }
+    class                                   { \_ -> TokClass }
+    new                                     { \_ -> TokNew }
+    rep                                     { \_ -> TokRep }
+    norep                                   { \_ -> TokNoRep }
+    owner                                   { \_ -> TokOwner }
+    null                                    { \_ -> TokNull }
+    void                                    { \_ -> TokVoid }
 
-    $alpha [$alpha $digit \_ \']*           { \s -> Name s }            -- name
+    $alpha [$alpha $digit \_ \']*           { \s -> TokName s }        -- name
 
-    \=\=|\!\=|[\{\}\(\)\,\.\<\>\;\=\|]      { \s -> Symbol s }
-    [\{\}\(\)\,\.\<\>\;\=\|]                { \s -> Symbol s }
+    \{                                      { \_ -> TokOpBr }
+    \}                                      { \_ -> TokClBr }
+    \(                                      { \_ -> TokOpPar }
+    \)                                      { \_ -> TokClPar }
+    \,                                      { \_ -> TokCom }
+    \.                                      { \_ -> TokDot }
+    \<                                      { \_ -> TokOpTr }
+    \>                                      { \_ -> TokClTr }
+    \;                                      { \_ -> TokSemi }
+    \=                                      { \_ -> TokAsgn }
+    \|                                      { \_ -> TokVert }
 
 {
 data Token =
-             Class
-           | New
-           | Rep
-           | NoRep
-           | Owner
-           | Null
-           | Void
-           | Name String
-           | Symbol String
+             TokClass
+           | TokNew
+           | TokRep
+           | TokNoRep
+           | TokOwner
+           | TokNull
+           | TokVoid
+           | TokName String
+           | TokEq
+           | TokNeq
+           | TokOpBr
+           | TokClBr
+           | TokOpPar
+           | TokClPar
+           | TokCom
+           | TokDot
+           | TokOpTr
+           | TokClTr
+           | TokSemi
+           | TokAsgn
+           | TokVert
     deriving (Eq, Show)
 
+lexer :: String -> [Token]
 lexer = alexScanTokens
 }
