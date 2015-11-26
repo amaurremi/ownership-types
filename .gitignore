@@ -1,2 +1,5 @@
 *.iml
-.idea
+/dist
+/out
+/src/Lexer.hs
+/.idea
