@@ -45,7 +45,7 @@ import Lexer
 
 %%
 
-ProgR     : DefnsR LocalsR ExprR                        { Prog $1 $2 $3 }
+ProgR     : DefnsR LocalsR ExprR               { Prog $1 $2 $3 } -- todo remove `evaluate`
 
 DefnsR    : DefnR                                       { [$1] }
           | DefnR DefnR                                 { $1 : $2 }

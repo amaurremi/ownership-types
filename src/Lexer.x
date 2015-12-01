@@ -33,7 +33,6 @@ tokens :-
     \;                                      { \_ -> TokSemi }
     \=                                      { \_ -> TokAsgn }
     \|                                      { \_ -> TokVert }
-
 {
 data Token =
              TokClass

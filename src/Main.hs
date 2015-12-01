@@ -9,4 +9,4 @@ import Parser
 main = do
     args <- getArgs
     code <- readFile $ head args -- todo
-    print $ parse $ lexer code
+    print $ parsed $ lexer code
