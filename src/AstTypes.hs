@@ -13,14 +13,14 @@ data VarName = VarName Name
              | This
     deriving (Eq, Show)
 
-data VarDec = VarDec OwnershipType VarName
+data VarDec = VarDec OwnershipType Name
     deriving (Eq, Show)
 
 type Name = String
 
 data Expr = New OwnershipType
           | Null
-          | Seq Expr Expr
+          | Seq [Expr]
           | VarExpr VarName
           | Asgn VarName Expr
           | FieldRead Expr Name

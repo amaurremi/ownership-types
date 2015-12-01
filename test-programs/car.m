@@ -1,20 +1,20 @@
 class Engine {
-    def void start () {}
-    def void stop () {}
+    void start () {}
+    void stop () {}
 }
 
 class Driver {}
 
 class Car {
-    fd Engine engine;      // representation
-    fd Driver driver;      // not representation
+    Engine engine;      // representation
+    Driver driver;      // not representation
 
     Car() {
         engine = new rep Engine();
         driver = null;
     }
 
-    def rep Engine getEngine() {
+    rep Engine getEngine() {
         // return engine;
     }
 
