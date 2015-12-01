@@ -32,10 +32,10 @@ data Prog = Prog [Defn] [VarDec] Expr
     deriving (Show)
 
 data OwnershipType = OwnershipType Name Context [Context]
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 data Context = Context Name
              | Rep
              | NoRep
              | Owner
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)

@@ -3,6 +3,9 @@ module Main where
 import System.Environment
 import System.IO
 
-import Car
+import TypeCheck
 
-main = do
+import Test.Car
+
+main = let checked = typeCheck car
+       in print "checked"
