@@ -1,5 +1,4 @@
 *.iml
-*.info
 /dist
 /out
 /src/Lexer.hs
