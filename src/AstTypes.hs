@@ -6,7 +6,7 @@ data Defn = Defn Name [Context] [Field] [Method]
 data Field = Field OwnershipType Name
     deriving (Eq, Show)
 
-data Method = Method OwnershipType Name [VarDec] Expr
+data Method = Method OwnershipType Name [VarDec] [VarDec] Expr
     deriving (Eq, Show)
 
 data VarName = VarName Name
