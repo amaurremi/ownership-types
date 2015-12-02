@@ -125,6 +125,14 @@ checkSeq prog sigma gamma es = do
     (e' : _) <- mapM (checkExpr prog sigma gamma) $ reverse es
     return e'
 
+checkFieldWrite prog sigma gamma r n e = do
+    t  <- checkFieldRead prog sigma gamma r n
+    t' <- checkExpr prog sigma gamma e
+    if t == t'
+        then return t
+        else Left $ "type mismatch of field write " ++ show r ++ "."
+            ++ show n ++ " = " ++ show e
+
 checkExpr :: P -> Σ -> Γ -> Expr -> Either String OwnershipType
 checkExpr prog sigma gamma e = case e of
     New t             ->
@@ -141,7 +149,8 @@ checkExpr prog sigma gamma e = case e of
         checkAsgn prog sigma gamma x e'
     FieldRead e' fd    ->
         checkFieldRead prog sigma gamma e' fd
-    FieldWrite r n e' -> error ""
+    FieldWrite r n e' ->
+        checkFieldWrite prog sigma gamma r n e'
     Invoc r n es      -> error ""
 
 checkMethod :: P -> Σ -> Γ -> Method -> Either String OwnershipType
