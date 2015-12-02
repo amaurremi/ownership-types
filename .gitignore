@@ -1,6 +1,5 @@
 *.iml
 /dist
 /out
-/src/Lexer.hs
 /Main
 /.idea

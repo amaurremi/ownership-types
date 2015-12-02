@@ -11,7 +11,7 @@ data Method = Method OwnershipType Name [VarDec] [VarDec] Expr
 
 data VarName = VarName Name
              | This
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 data VarDec = VarDec OwnershipType Name
     deriving (Eq, Show)

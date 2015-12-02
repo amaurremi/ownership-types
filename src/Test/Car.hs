@@ -1,4 +1,4 @@
-module Car where
+module Test.Car where
 
 import AstTypes
 
@@ -20,6 +20,7 @@ mainClass = Defn "Main" [] [] [main]
           car     = VarDec (OwnershipType "Car" NoRep []) "car"
           e       = VarDec (OwnershipType "Engine" Rep []) "e"
           carExpr = VarExpr $ VarName "car"
+          main    = Method void "main" [] [bob, car, e] $ Seq [
             Asgn (VarName "bob") (New $ OwnershipType "Driver" NoRep []),
             Asgn (VarName "car") (New $ OwnershipType "Car" NoRep []),
             FieldWrite carExpr "driver" (VarExpr $ VarName "bob"),
