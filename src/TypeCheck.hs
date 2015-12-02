@@ -24,12 +24,15 @@ fieldDict (Defn _ _ fields _) = Map.fromList $ map (\(Field t n) -> (n, t)) fiel
 methodDict :: Defn -> MethodDict
 methodDict (Defn _ _ _ methods) = Map.fromList $
     map (\(Method t n args vars e) ->
-        let (argNames, argTypes) = unzip $ Map.toList $ varDict args
-        in (n, ((argTypes, t), argNames, e, varDict))
+        let (argNames, argTypes) = unzip $ varDictList args
+        in (n, ((argTypes, t), argNames, e, varDict args))
     ) methods
 
+varDictList :: [VarDec] -> [(Name, OwnershipType)]
+varDictList = map (\(VarDec vt vn) -> (vn, vt))
+
 varDict :: [VarDec] -> VarDict
-varDict = Map.fromList . (map (\(VarDec vt vn) -> (vn, vt)))
+varDict = Map.fromList . varDictList
 
 typeCheck :: Prog -> Bool
 typeCheck prog@(Prog defns varDecs expr) =
