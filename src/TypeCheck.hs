@@ -55,7 +55,14 @@ checkType prog sigma (OwnershipType n t ts) =
     in (t `Set.member` newSigma) && (Set.fromList ts `Set.isSubsetOf` newSigma)
 
 checkExpr :: P -> Σ -> Γ -> Expr -> Bool
-checkExpr prog sigma gamma e = error ""
+checkExpr prog sigma gamma e = case e of
+    Null              -> error ""
+    Seq es            -> error ""
+    VarExpr n         -> error ""
+    Asgn n e'         -> error ""
+    FieldRead r n     -> error ""
+    FieldWrite r n e' -> error ""
+    Invoc r n es      -> error ""
 
 checkMethod :: P -> Σ -> Γ -> Method -> Bool
 checkMethod prog sigma gamma (Method t n args vars e) =
