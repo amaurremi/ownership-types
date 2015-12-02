@@ -17,14 +17,30 @@ type P = Prog
 type Σ = Set.Set Context
 type Γ = Map.Map VarName OwnershipType
 
+----------------------
+-- Helper functions --
+----------------------
+
 -- static visibility
 sv :: Expr -> OwnershipType -> Bool
 sv (VarExpr This) t                   = True
 sv e (OwnershipType _ c cs) = not $ Rep `elem` c : cs
 
--- substitution
---σ =
---ψ =
+-- given a concrete type, looks up its ownership scheme
+-- and creates a substitution function
+ψ :: Prog -> OwnershipType -> Map.Map Context Context
+ψ prog (OwnershipType name c cs) =
+    case getClassNamed prog name of
+        Just (Defn _ cs' _ _) ->
+            Map.fromList $ zip (Owner : cs') (c : cs)
+        Nothing              ->
+            error $ "no class for type " ++ name
+
+-- given a substitution function, takes a polymorphic ownership type
+-- and replaces it with a concrete one
+σ :: Map.Map Context Context -> OwnershipType -> OwnershipType
+σ m (OwnershipType name c cs) =
+    OwnershipType name (m Map.! c) $ map (m Map.!) cs
 
 fieldDict :: Defn -> FieldDict
 fieldDict (Defn _ _ fields _) = Map.fromList $ map (\(Field t n) -> (n, t)) fields
@@ -42,9 +58,12 @@ varDictList = map (\(VarDec vt vn) -> (VarName vn, vt))
 varDict :: [VarDec] -> VarDict
 varDict = Map.fromList . varDictList
 
-getClass :: Prog -> OwnershipType -> Maybe Defn
-getClass (Prog defs _ _) (OwnershipType name _ _) =
+getClassNamed :: Prog -> Name -> Maybe Defn
+getClassNamed (Prog defs _ _) name =
     find (\(Defn n _ _ _) -> n == name) defs
+
+getClass :: Prog -> OwnershipType -> Maybe Defn
+getClass prog (OwnershipType name _ _) = getClassNamed prog name
 
 -------------------
 -- Type checking --
@@ -71,7 +90,7 @@ checkType :: P -> Σ -> OwnershipType -> Either String OwnershipType
 checkType prog sigma o@(OwnershipType n t ts) =
     let newSigma = Set.fromList [Rep, NoRep] `Set.union` sigma
     in if (t `Set.member` newSigma) && (Set.fromList ts `Set.isSubsetOf` newSigma)
-       then Right o
+       then return o
        else Left $ "checkType error: " ++ show o
 
 checkAsgn prog sigma gamma x e =
@@ -79,7 +98,7 @@ checkAsgn prog sigma gamma x e =
         Just t -> do
             t' <- checkExpr prog sigma gamma e
             if t == t'
-                then Right t
+                then return t
                 else Left $ "assignment type mismatch: " ++ show t ++ " and " ++ show t'
         _                 ->
             Left $ "variable " ++ show x ++ " not in scope"
@@ -87,19 +106,19 @@ checkAsgn prog sigma gamma x e =
 checkFieldRead prog sigma gamma e fd = do
     t <- checkExpr prog sigma gamma e
     c <- case getClass prog t of
-        Just cl -> Right cl
+        Just cl -> return cl
         Nothing -> Left $ "no class of type " ++ show t
     case Map.lookup fd (fieldDict c) of
         Just t' ->
             if sv e t'
-            then error "???"
+            then return $ σ (ψ prog t) t'
             else Left $ "static visibility check failed for expression "
                  ++ show e ++ " and type " ++ show t'
         Nothing -> Left $ "field " ++ show fd ++ " not defined in class " ++ show t
 
 checkVarExpr gamma v =
     case Map.lookup v gamma of
-        Just t  -> Right t
+        Just t  -> return t
         Nothing -> Left $ show v ++ " not in scope"
 
 checkSeq prog sigma gamma es = do
