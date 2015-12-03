@@ -5,11 +5,17 @@ import AstTypes
 car :: Prog
 car = Prog defs [] expr
 
-defs = [engineClass, driverClass, mainClass]
+defs = [engineClass, carClass, driverClass, mainClass]
 
 engineClass = Defn "Engine" [] [] [startM, stopM]
     where startM = Method engineType "start" [] [] $ New engineType
           stopM  = Method engineType "stop" [] [] $ New engineType
+
+carClass = Defn "Car" [] [] [goM]
+
+carType = OwnershipType "Car" NoRep []
+
+goM = error ""
 
 engineType = OwnershipType "Engine" NoRep []
 
