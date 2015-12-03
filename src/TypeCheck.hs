@@ -71,9 +71,10 @@ varDict = Map.fromList . varDictList
 
 getClass :: Prog -> Name -> Defn
 getClass prog name =
-    case find (\def -> className def == name) $ defns prog of
+    let defs = defns prog
+    in case find (\def -> className def == name) defs of
         Just defn -> defn
-        Nothing   -> error $ "no class of type " ++ name
+        Nothing   -> error $ "no class of type " ++ name ++ "\nAvailable classes: " ++ unwords (map className defs)
 
 -------------------
 -- Type checking --
