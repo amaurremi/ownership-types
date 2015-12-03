@@ -8,8 +8,10 @@ car = Prog defs [] expr
 defs = [engineClass, driverClass, mainClass]
 
 engineClass = Defn "Engine" [] [] [startM, stopM]
-    where startM = Method void "start" [] [] Null
-          stopM  = Method void "stop" [] [] Null
+    where startM = Method engineType "start" [] [] $ New engineType
+          stopM  = Method engineType "stop" [] [] $ New engineType
+
+engineType = OwnershipType "Engine" NoRep []
 
 driverClass = Defn "Driver" [] [] []
 

@@ -5,7 +5,6 @@ import System.IO
 
 import TypeCheck
 
-import Test.Car
+import Test.Simple
 
-main = let checked = typeCheck car
-       in print "checked"
+main = print $ typeCheck simple

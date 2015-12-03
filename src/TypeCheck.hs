@@ -49,8 +49,14 @@ sv e def = not $ Rep `elem` tOwner def : tCtxs def
 -- given a substitution function, takes a polymorphic ownership type
 -- and replaces it with a concrete one
 σ :: Map.Map Context Context -> OwnershipType -> OwnershipType
-σ m (OwnershipType name c cs) =
-    OwnershipType name (m Map.! c) $ map (m Map.!) cs
+σ m o@(OwnershipType name c cs) =
+    let contexts = do
+        ctx  <- Map.lookup c m
+        ctxs <- mapM (\c -> Map.lookup c m) cs
+        return $ ctx : ctxs
+    in case contexts of
+        Just (c' : cs') -> OwnershipType name c' cs'
+        Nothing         -> o
 
 fieldDict :: Defn -> FieldDict
 fieldDict = Map.fromList . map (\(Field t n) -> (n, t)) . fields
@@ -106,7 +112,7 @@ checkAsgn prog sigma gamma x e =
             if t == t'
                 then return t
                 else Left $ "assignment type mismatch: " ++ show t ++ " and " ++ show t'
-        _                 ->
+        _      ->
             Left $ "variable " ++ show x ++ " not in scope"
 
 checkFieldRead prog sigma gamma e fd = do
