@@ -1,17 +1,27 @@
 module TypeCheck where
 
 import Data.List (find)
+import Data.Maybe (fromJust)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import AstTypes
 
 -- method signature type: return type + parameter types
-type Sig = ([OwnershipType], OwnershipType)
+data Sig = Sig {
+    sigArgTypes :: [OwnershipType],
+    sigRetType  :: OwnershipType
+}
 
 type VarDict = Map.Map VarName OwnershipType
 type FieldDict = Map.Map Name OwnershipType
-type MethodDict = Map.Map Name (Sig, [VarName], Expr, VarDict)
+data MethodDictVal = MDV {
+    mdvSig :: Sig,
+    mdvArgs :: [VarName],
+    mdvExpr :: Expr,
+    mdvVarDict :: VarDict
+}
+type MethodDict = Map.Map Name MethodDictVal
 
 type P = Prog
 type Σ = Set.Set Context
@@ -49,8 +59,7 @@ methodDict :: Defn -> MethodDict
 methodDict = Map.fromList .
     map (\(Method t n args vars e) ->
         let (argNames, argTypes) = unzip $ varDictList args
-        in (n, ((argTypes, t), argNames, e, varDict args))
-    ) . methods
+        in (n, MDV (Sig argTypes t) argNames e $ varDict args)) . methods
 
 varDictList :: [VarDec] -> [(VarName, OwnershipType)]
 varDictList = map (\(VarDec vt vn) -> (VarName vn, vt))
@@ -119,7 +128,7 @@ checkVarExpr gamma v =
         Nothing -> Left $ show v ++ " not in scope"
 
 checkSeq prog sigma gamma es = do
-    (e' : _) <- mapM (checkExpr prog sigma gamma) $ reverse es
+    e' : _ <- mapM (checkExpr prog sigma gamma) $ reverse es
     return e'
 
 checkFieldWrite prog sigma gamma r n e = do
@@ -134,6 +143,8 @@ checkInvoc prog sigma gamma obj name args = do
     objT  <- checkExpr prog sigma gamma obj
     argTs <- mapM (checkExpr prog sigma gamma) args
     let subst = ψ prog objT
+        mDict = methodDict $ fromJust $ getClass prog $ tName objT
+        Sig mArgs mRetType = mdvSig $ mDict Map.! name
         in error ""
 
 checkExpr :: P -> Σ -> Γ -> Expr -> Either String OwnershipType
