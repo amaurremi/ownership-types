@@ -1,40 +1,65 @@
 module AstTypes where
 
-data Defn = Defn Name [Context] [Field] [Method]
-    deriving (Eq, Show)
+data Defn = Defn {
+    className :: Name,
+    classCtxs :: [Context],
+    fields    :: [Field],
+    methods   :: [Method]
+} deriving (Eq, Show)
 
-data Field = Field OwnershipType Name
-    deriving (Eq, Show)
+data Field = Field {
+    fdType :: OwnershipType,
+    fdName :: Name
+} deriving (Eq, Show)
 
-data Method = Method OwnershipType Name [VarDec] [VarDec] Expr
-    deriving (Eq, Show)
+data Method = Method {
+    mType   :: OwnershipType,
+    mName   :: Name,
+    mArgs   :: [VarDec],
+    mLocals :: [VarDec],
+    mExpr   :: Expr
+} deriving (Eq, Show)
 
-data VarName = VarName Name
+data VarName = VarName { vName :: Name }
              | This
     deriving (Eq, Ord, Show)
 
-data VarDec = VarDec OwnershipType Name
-    deriving (Eq, Show)
+data VarDec = VarDec {
+    vDecType :: OwnershipType,
+    vDecName :: Name
+} deriving (Eq, Show)
 
 type Name = String
 
-data Expr = New OwnershipType
+data Expr = New        { newType   :: OwnershipType }
           | Null
-          | Seq [Expr]
-          | VarExpr VarName
-          | Asgn VarName Expr
-          | FieldRead Expr Name
-          | FieldWrite Expr Name Expr
-          | Invoc Expr Name [Expr]
+          | Seq        { seqExprs  :: [Expr] }
+          | VarExpr    { vExprName :: VarName }
+          | Asgn       { lhs       :: VarName,
+                         rhs       :: Expr }
+          | FieldRead  { fdRObj    :: Expr,
+                         fdRName   :: Name }
+          | FieldWrite { fdWObj    :: Expr,
+                         fdWName   :: Name,
+                         fdWExpr   :: Expr }
+          | Invoc      { invocObj  :: Expr,
+                         invocName :: Name,
+                         invocArgs :: [Expr] }
     deriving (Eq, Show)
 
-data Prog = Prog [Defn] [VarDec] Expr
-    deriving (Show)
+data Prog = Prog {
+    defns       :: [Defn],
+    progVarDecs :: [VarDec],
+    progExpr    :: Expr
+} deriving (Show)
 
-data OwnershipType = OwnershipType Name Context [Context]
-    deriving (Eq, Ord, Show)
+data OwnershipType = OwnershipType {
+    tName  :: Name,
+    tOwner :: Context,
+    tCtxs  :: [Context]
+} deriving (Eq, Ord, Show)
 
-data Context = Context Name
+data Context = Context { ctx :: Name }
              | Rep
              | NoRep
              | Owner

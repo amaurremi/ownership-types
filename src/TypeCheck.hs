@@ -24,15 +24,15 @@ type Γ = Map.Map VarName OwnershipType
 -- static visibility
 sv :: Expr -> OwnershipType -> Bool
 sv (VarExpr This) t                   = True
-sv e (OwnershipType _ c cs) = not $ Rep `elem` c : cs
+sv e def = not $ Rep `elem` tOwner def : tCtxs def
 
 -- given a concrete type, looks up its ownership scheme
 -- and creates a substitution function
 ψ :: Prog -> OwnershipType -> Map.Map Context Context
 ψ prog (OwnershipType name c cs) =
-    case getClassNamed prog name of
-        Just (Defn _ cs' _ _) ->
-            Map.fromList $ zip (Owner : cs') (c : cs)
+    case getClass prog name of
+        Just def ->
+            Map.fromList $ zip (Owner : classCtxs def) (c : cs)
         Nothing              ->
             error $ "no class for type " ++ name
 
@@ -43,14 +43,14 @@ sv e (OwnershipType _ c cs) = not $ Rep `elem` c : cs
     OwnershipType name (m Map.! c) $ map (m Map.!) cs
 
 fieldDict :: Defn -> FieldDict
-fieldDict (Defn _ _ fields _) = Map.fromList $ map (\(Field t n) -> (n, t)) fields
+fieldDict = Map.fromList . map (\(Field t n) -> (n, t)) . fields
 
 methodDict :: Defn -> MethodDict
-methodDict (Defn _ _ _ methods) = Map.fromList $
+methodDict = Map.fromList .
     map (\(Method t n args vars e) ->
         let (argNames, argTypes) = unzip $ varDictList args
         in (n, ((argTypes, t), argNames, e, varDict args))
-    ) methods
+    ) . methods
 
 varDictList :: [VarDec] -> [(VarName, OwnershipType)]
 varDictList = map (\(VarDec vt vn) -> (VarName vn, vt))
@@ -58,12 +58,9 @@ varDictList = map (\(VarDec vt vn) -> (VarName vn, vt))
 varDict :: [VarDec] -> VarDict
 varDict = Map.fromList . varDictList
 
-getClassNamed :: Prog -> Name -> Maybe Defn
-getClassNamed (Prog defs _ _) name =
-    find (\(Defn n _ _ _) -> n == name) defs
-
-getClass :: Prog -> OwnershipType -> Maybe Defn
-getClass prog (OwnershipType name _ _) = getClassNamed prog name
+getClass :: Prog -> Name -> Maybe Defn
+getClass prog name =
+    find (\def -> className def == name) $ defns prog
 
 -------------------
 -- Type checking --
@@ -105,7 +102,7 @@ checkAsgn prog sigma gamma x e =
 
 checkFieldRead prog sigma gamma e fd = do
     t <- checkExpr prog sigma gamma e
-    c <- case getClass prog t of
+    c <- case getClass prog (tName t) of
         Just cl -> return cl
         Nothing -> Left $ "no class of type " ++ show t
     case Map.lookup fd (fieldDict c) of
@@ -133,6 +130,12 @@ checkFieldWrite prog sigma gamma r n e = do
         else Left $ "type mismatch of field write " ++ show r ++ "."
             ++ show n ++ " = " ++ show e
 
+checkInvoc prog sigma gamma obj name args = do
+    objT  <- checkExpr prog sigma gamma obj
+    argTs <- mapM (checkExpr prog sigma gamma) args
+    let subst = ψ prog objT
+        in error ""
+
 checkExpr :: P -> Σ -> Γ -> Expr -> Either String OwnershipType
 checkExpr prog sigma gamma e = case e of
     New t             ->
@@ -151,7 +154,7 @@ checkExpr prog sigma gamma e = case e of
         checkFieldRead prog sigma gamma e' fd
     FieldWrite r n e' ->
         checkFieldWrite prog sigma gamma r n e'
-    Invoc r n es      -> error ""
+    Invoc r n args      -> checkInvoc prog sigma gamma r n args
 
 checkMethod :: P -> Σ -> Γ -> Method -> Either String OwnershipType
 checkMethod prog sigma gamma (Method t n args vars e) =
