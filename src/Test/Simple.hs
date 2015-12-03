@@ -15,4 +15,4 @@ engineType = OwnershipType "Engine" NoRep []
 
 locals = [VarDec (OwnershipType "Engine" NoRep []) "engine"]
 
-expr = Invoc (VarExpr $ VarName "engine") "startM" []
+expr = Invoc (VarExpr $ VarName "engine") "start" []

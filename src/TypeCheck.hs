@@ -150,7 +150,9 @@ checkInvoc prog sigma gamma obj name args = do
     argTs <- mapM (checkExpr prog sigma gamma) args
     let subst                  = ψ prog objT
         mDict                  = methodDict $ fromJust $ getClass prog $ tName objT
-        Sig mArgTypes mRetType = mdvSig $ mDict Map.! name
+        Sig mArgTypes mRetType = case Map.lookup name mDict of
+            Just m  -> mdvSig m
+            Nothing -> error $ "method with name " ++ name ++ " not in dictionary for class " ++ tName objT
         expArgTs               = map (σ subst) mArgTypes
         in if (all (sv obj) (mRetType : mArgTypes)) &&
               (expArgTs == argTs)

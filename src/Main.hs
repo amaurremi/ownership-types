@@ -6,5 +6,6 @@ import System.IO
 import TypeCheck
 
 import Test.Simple
+import Test.Car
 
-main = print $ typeCheck simple
+main = print $ typeCheck car
