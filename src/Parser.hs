@@ -16,7 +16,6 @@ tokToStr (TokRep _) = Just "rep"
 tokToStr (TokNoRep _) = Just "norep"
 tokToStr (TokOwner _) = Just "owner"
 tokToStr (TokNull _) = Just "null"
-tokToStr (TokVoid _) = Just "void"
 tokToStr (TokThis _) = Just "this"
 tokToStr (TokName _ _) = Nothing
 tokToStr (TokOp _) = Just "("
@@ -24,6 +23,8 @@ tokToStr (TokCl _) = Just ")"
 tokToStr (TokAsgn _) = Just "="
 tokToStr (TokSeq _) = Just "seq"
 tokToStr (TokInvoc _) = Just "invoc"
+tokToStr (TokEnd _) = Just "end"
+tokToStr (TokUnitType _) = Just "Unit"
 
 parsed :: [Token] -> Either ParseError Prog
 parsed = parse prog "source"
@@ -86,9 +87,9 @@ varName = vName <|> this
     where vName = do
                 n <- name
                 return $ VarName n
-          this  = token show pos (\x -> case x of
-                  TokThis _ -> Just This
-                  _         -> Nothing)
+          this  = do
+            sym "this"
+            return This
 varDef :: Parser VarDec u
 varDef = pars $ do
     o <- ownType
@@ -96,7 +97,7 @@ varDef = pars $ do
     return $ VarDec o n
 
 expr :: Parser Expr u
-expr = choice $ map try [seq, newExpr, null, varNameExpr, fieldRead, fieldWrite, invocation, assignment]
+expr = choice $ map try [seq, newExpr, null, varNameExpr, fieldRead, fieldWrite, invocation, assignment, end]
     where seq = pars $ do
             sym "seq"
             es <- many1 expr
@@ -131,6 +132,15 @@ expr = choice $ map try [seq, newExpr, null, varNameExpr, fieldRead, fieldWrite,
             n  <- name
             e2 <- pars $ many expr
             return $ Invoc e1 n e2
+          end = do
+            sym "end"
+            return End
+
+returnType = ownType <|> unitType
+
+unitType = do
+    sym "Unit"
+    return UnitType
 
 ownType :: Parser OwnershipType u
 ownType = pars $ do
@@ -148,7 +158,7 @@ field = pars $ do
 method :: Parser Method u
 method = pars $ do
     n  <- name
-    o  <- ownType
+    o  <- returnType
     as <- pars $ many varDef
     ls <- pars $ many locDef
     e  <- expr

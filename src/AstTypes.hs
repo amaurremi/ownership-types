@@ -33,6 +33,7 @@ type Name = String
 
 data Expr = New        { newType   :: OwnershipType }
           | Null
+          | End
           | Seq        { seqExprs  :: [Expr] }
           | VarExpr    { vExprName :: VarName }
           | Asgn       { lhs       :: VarName,
@@ -53,11 +54,15 @@ data Prog = Prog {
     progExpr    :: Expr
 } deriving (Show)
 
-data OwnershipType = OwnershipType {
-    tName  :: Name,
-    tOwner :: Context,
-    tCtxs  :: [Context]
-} deriving (Eq, Ord, Show)
+data OwnershipType =
+                     OwnershipType {
+                         tName  :: Name,
+                         tOwner :: Context,
+                         tCtxs  :: [Context]
+                     }
+                   | NullType
+                   | UnitType
+    deriving (Eq, Ord, Show)
 
 data Context = Context { ctx :: Name }
              | Rep

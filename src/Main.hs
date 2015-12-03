@@ -13,4 +13,6 @@ import Test.Car
 main = do
     args <- getArgs
     code <- readFile $ head args -- todo
-    print $ parsed $ lexer code
+    case parsed (lexer code) of
+        Left error   -> print error
+        Right prog -> print $ typeCheck prog

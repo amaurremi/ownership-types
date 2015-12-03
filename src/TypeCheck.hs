@@ -33,8 +33,10 @@ type Γ = Map.Map VarName OwnershipType
 
 -- static visibility
 sv :: Expr -> OwnershipType -> Bool
-sv (VarExpr This) t                   = True
-sv e def = not $ Rep `elem` tOwner def : tCtxs def
+sv (VarExpr This) t         = True
+sv e (OwnershipType _ c cs) = not $ Rep `elem` c : cs
+sv _ UnitType               = True
+sv _ NullType               = True
 
 -- given a concrete type, looks up its ownership scheme
 -- and creates a substitution function
@@ -53,6 +55,8 @@ sv e def = not $ Rep `elem` tOwner def : tCtxs def
     in case contexts of
         Just (c' : cs') -> OwnershipType name c' cs'
         Nothing         -> o
+σ _ UnitType = UnitType
+σ _ NullType = NullType
 
 fieldDict :: Defn -> FieldDict
 fieldDict = Map.fromList . map (\(Field t n) -> (n, t)) . fields
@@ -76,6 +80,13 @@ getClass prog name =
         Just defn -> defn
         Nothing   -> error $ "no class of type " ++ name ++ "\nAvailable classes: " ++ unwords (map className defs)
 
+-- type checking for assignment
+-- typesMatch lhsType rhsType should succeed if rhsType is of type Null
+typesMatch :: OwnershipType -> OwnershipType -> Bool
+typesMatch _ NullType = True
+typesMatch t t'       = t == t'
+
+
 -------------------
 -- Type checking --
 -------------------
@@ -97,17 +108,21 @@ checkClass prog defn@(Defn n cs fs ms) =
         mapM_ (checkMethod prog sigma gamma) ms
 
 checkType :: P -> Σ -> OwnershipType -> Either String OwnershipType
-checkType prog sigma o@(OwnershipType n t ts) =
+checkType prog sigma o@(OwnershipType _ t ts) =
     let newSigma = Set.fromList [Rep, NoRep] `Set.union` sigma
     in if (t `Set.member` newSigma) && (Set.fromList ts `Set.isSubsetOf` newSigma)
        then return o
        else Left $ "checkType error: " ++ show o
+checkType _ _ UnitType                        =
+    return UnitType
+checkType _ _ NullType                        =
+    return NullType
 
 checkAsgn prog sigma gamma x e =
     case Map.lookup x gamma of
         Just t -> do
             t' <- checkExpr prog sigma gamma e
-            if t == t'
+            if typesMatch t t'
                 then return t
                 else Left $ "assignment type mismatch: " ++ show t ++ " and " ++ show t'
         _      ->
@@ -136,7 +151,7 @@ checkSeq prog sigma gamma es = do
 checkFieldWrite prog sigma gamma r n e = do
     t  <- checkFieldRead prog sigma gamma r n
     t' <- checkExpr prog sigma gamma e
-    if t == t'
+    if typesMatch t t'
         then return t
         else Left $ "type mismatch of field write " ++ show r ++ "."
             ++ show n ++ " = " ++ show e
@@ -150,7 +165,7 @@ checkInvoc prog sigma gamma obj name args = do
             Just m  -> mdvSig m
             Nothing -> error $ "method with name " ++ name ++ " not in dictionary for class " ++ tName objT
     let expArgTs               = map (σ subst) mArgTypes
-    if (all (sv obj) (mRetType : mArgTypes)) && (expArgTs == argTs)
+    if (all (sv obj) (mRetType : mArgTypes)) && (foldl (&&) True $ zipWith typesMatch expArgTs argTs)
         then return $ σ subst mRetType
         else Left $ "invoc type error: " ++ show obj ++ "." ++ name
 
@@ -159,7 +174,7 @@ checkExpr prog sigma gamma e = case e of
     New t             ->
         checkType prog sigma t
     Null              ->
-        error "???" -- todo don't do type checking for null
+        return NullType
     Seq es            ->
         checkSeq prog sigma gamma es
     VarExpr v         ->
@@ -168,11 +183,14 @@ checkExpr prog sigma gamma e = case e of
         Left "assignment to `this`"
     Asgn x e'         ->
         checkAsgn prog sigma gamma x e'
-    FieldRead e' fd    ->
+    FieldRead e' fd   ->
         checkFieldRead prog sigma gamma e' fd
     FieldWrite r n e' ->
         checkFieldWrite prog sigma gamma r n e'
-    Invoc r n args      -> checkInvoc prog sigma gamma r n args
+    Invoc r n args    ->
+        checkInvoc prog sigma gamma r n args
+    End               ->
+        return UnitType
 
 checkMethod :: P -> Σ -> Γ -> Method -> Either String OwnershipType
 checkMethod prog sigma gamma (Method t n args vars e) =
