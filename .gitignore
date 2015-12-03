@@ -2,4 +2,5 @@
 /dist
 /out
 /Main
+/src/Lexer.hs
 /.idea
