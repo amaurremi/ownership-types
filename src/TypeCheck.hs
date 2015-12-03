@@ -142,10 +142,14 @@ checkFieldWrite prog sigma gamma r n e = do
 checkInvoc prog sigma gamma obj name args = do
     objT  <- checkExpr prog sigma gamma obj
     argTs <- mapM (checkExpr prog sigma gamma) args
-    let subst = ψ prog objT
-        mDict = methodDict $ fromJust $ getClass prog $ tName objT
-        Sig mArgs mRetType = mdvSig $ mDict Map.! name
-        in error ""
+    let subst                  = ψ prog objT
+        mDict                  = methodDict $ fromJust $ getClass prog $ tName objT
+        Sig mArgTypes mRetType = mdvSig $ mDict Map.! name
+        expArgTs               = map (σ subst) mArgTypes
+        in if (all (sv obj) (mRetType : mArgTypes)) &&
+              (expArgTs == argTs)
+           then return $ σ subst mRetType
+           else Left $ "invoc type error: " ++ show obj ++ "." ++ name
 
 checkExpr :: P -> Σ -> Γ -> Expr -> Either String OwnershipType
 checkExpr prog sigma gamma e = case e of
