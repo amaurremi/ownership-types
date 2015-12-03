@@ -18,8 +18,9 @@
       )
 )
 
-( ; main
+; main
+(
     seq
-    (= engine (new (Engine norep ())))  ; engine = new Engine<norep>
-    (invoc engine start ())             ; engine.start()
+    (= engine (new (Engine norep ()))) ; engine = new Engine<norep>
+    (invoc engine start ()) ; engine.start()
 )

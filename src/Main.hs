@@ -13,4 +13,4 @@ import Test.Car
 main = do
     args <- getArgs
     code <- readFile $ head args -- todo
-    print $ lexer code
+    print $ parsed $ lexer code

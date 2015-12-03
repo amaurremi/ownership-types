@@ -50,12 +50,12 @@ sym s = token show pos (\x -> do
     if str == s then Just () else Nothing)
 
 locDef = pars $ do
-    t <- ownType
     n <- name
+    t <- ownType
     return $ VarDec t n
 
 defn :: Parser Defn u
-defn = do
+defn = pars $ do
     sym "class"
     n  <- name
     cs <- pars $ many contextDef
@@ -63,7 +63,7 @@ defn = do
     ms <- pars $ many method
     return $ Defn n cs fs ms
 
---contextDef :: Parser [Context] u
+contextDef :: Parser Context u
 contextDef = do
     n <- name
     return $ Context n
@@ -78,7 +78,8 @@ cont = token show pos (\x -> case x of
         TokRep _    -> Just Rep
         TokNoRep _  -> Just NoRep
         TokOwner _  -> Just Owner
-        TokName _ s -> Just $ Context s)
+        TokName _ s -> Just $ Context s
+        _           -> Nothing)
 
 varName :: Parser VarName u
 varName = vName <|> this
@@ -89,14 +90,18 @@ varName = vName <|> this
                   TokThis _ -> Just This
                   _         -> Nothing)
 varDef :: Parser VarDec u
-varDef = do
+varDef = pars $ do
     o <- ownType
     n <- name
     return $ VarDec o n
 
 expr :: Parser Expr u
-expr = choice [newExpr, null, varNameExpr, fieldRead, fieldWrite, invocation, assignment, seq]
-    where newExpr = pars $ do
+expr = choice $ map try [seq, newExpr, null, varNameExpr, fieldRead, fieldWrite, invocation, assignment]
+    where seq = pars $ do
+            sym "seq"
+            es <- many1 expr
+            return $ Seq es
+          newExpr = pars $ do
             sym "new"
             o <- ownType
             return $ New o
@@ -106,10 +111,6 @@ expr = choice [newExpr, null, varNameExpr, fieldRead, fieldWrite, invocation, as
           varNameExpr = do
             n <- varName
             return $ VarExpr  n
-          seq = pars $ do
-            sym "seq"
-            es <- many1 expr
-            return $ Seq es
           assignment = pars $ do
             sym "="
             n <- varName
