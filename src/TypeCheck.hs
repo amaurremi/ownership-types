@@ -40,11 +40,7 @@ sv e def = not $ Rep `elem` tOwner def : tCtxs def
 -- and creates a substitution function
 ψ :: Prog -> OwnershipType -> Map.Map Context Context
 ψ prog (OwnershipType name c cs) =
-    case getClass prog name of
-        Just def ->
-            Map.fromList $ zip (Owner : classCtxs def) (c : cs)
-        Nothing              ->
-            error $ "no class for type " ++ name
+    Map.fromList $ zip (Owner : (classCtxs $ getClass prog name)) (c : cs)
 
 -- given a substitution function, takes a polymorphic ownership type
 -- and replaces it with a concrete one
@@ -73,21 +69,22 @@ varDictList = map (\(VarDec vt vn) -> (VarName vn, vt))
 varDict :: [VarDec] -> VarDict
 varDict = Map.fromList . varDictList
 
-getClass :: Prog -> Name -> Maybe Defn
+getClass :: Prog -> Name -> Defn
 getClass prog name =
-    find (\def -> className def == name) $ defns prog
+    case find (\def -> className def == name) $ defns prog of
+        Just defn -> defn
+        Nothing   -> error $ "no class of type " ++ name
 
 -------------------
 -- Type checking --
 -------------------
 
 typeCheck :: Prog -> Either String OwnershipType
-typeCheck prog@(Prog defns varDecs expr) =
+typeCheck prog@(Prog defns varDecs expr) = do
     let (varNames, varTypes) = unzip $ varDictList varDecs
-    in do
-        mapM_ (checkClass prog) defns
-        mapM_ (checkType prog Set.empty) varTypes
-        checkExpr prog Set.empty (varDict varDecs) expr
+    mapM_ (checkClass prog) defns
+    mapM_ (checkType prog Set.empty) varTypes
+    checkExpr prog Set.empty (varDict varDecs) expr
 
 checkClass :: P -> Defn -> Either String ()
 checkClass prog defn@(Defn n cs fs ms) =
@@ -117,9 +114,7 @@ checkAsgn prog sigma gamma x e =
 
 checkFieldRead prog sigma gamma e fd = do
     t <- checkExpr prog sigma gamma e
-    c <- case getClass prog (tName t) of
-        Just cl -> return cl
-        Nothing -> Left $ "no class of type " ++ show t
+    let c = getClass prog $ tName t
     case Map.lookup fd (fieldDict c) of
         Just t' ->
             if sv e t'
@@ -149,15 +144,14 @@ checkInvoc prog sigma gamma obj name args = do
     objT  <- checkExpr prog sigma gamma obj
     argTs <- mapM (checkExpr prog sigma gamma) args
     let subst                  = ψ prog objT
-        mDict                  = methodDict $ fromJust $ getClass prog $ tName objT
-        Sig mArgTypes mRetType = case Map.lookup name mDict of
+    let mDict                  = methodDict $ getClass prog $ tName objT
+    let Sig mArgTypes mRetType = case Map.lookup name mDict of
             Just m  -> mdvSig m
             Nothing -> error $ "method with name " ++ name ++ " not in dictionary for class " ++ tName objT
-        expArgTs               = map (σ subst) mArgTypes
-        in if (all (sv obj) (mRetType : mArgTypes)) &&
-              (expArgTs == argTs)
-           then return $ σ subst mRetType
-           else Left $ "invoc type error: " ++ show obj ++ "." ++ name
+    let expArgTs               = map (σ subst) mArgTypes
+    if (all (sv obj) (mRetType : mArgTypes)) && (expArgTs == argTs)
+        then return $ σ subst mRetType
+        else Left $ "invoc type error: " ++ show obj ++ "." ++ name
 
 checkExpr :: P -> Σ -> Γ -> Expr -> Either String OwnershipType
 checkExpr prog sigma gamma e = case e of
