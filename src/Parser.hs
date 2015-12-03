@@ -92,12 +92,12 @@ varName = vName <|> this
             return This
 varDef :: Parser VarDec u
 varDef = pars $ do
-    o <- ownType
     n <- name
+    o <- ownType
     return $ VarDec o n
 
 expr :: Parser Expr u
-expr = choice $ map try [seq, newExpr, null, varNameExpr, fieldRead, fieldWrite, invocation, assignment, end]
+expr = choice $ map try [seq, newExpr, null, varNameExpr, fieldRead, fieldWrite, invocation, assignment, end, inPars]
     where seq = pars $ do
             sym "seq"
             es <- many1 expr
@@ -135,6 +135,7 @@ expr = choice $ map try [seq, newExpr, null, varNameExpr, fieldRead, fieldWrite,
           end = do
             sym "end"
             return End
+          inPars = pars expr
 
 returnType = ownType <|> unitType
 
@@ -151,8 +152,8 @@ ownType = pars $ do
 
 field :: Parser Field u
 field = pars $ do
-    o <- ownType
     n <- name
+    o <- ownType
     return $ Field o n
 
 method :: Parser Method u

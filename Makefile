@@ -10,4 +10,4 @@ compile:
 cabal:
 	cabal update
 	cabal install cabal-install
-	cabal install alex happy
+	cabal install alex
