@@ -1,11 +1,11 @@
 module TypeCheck where
 
 import Data.List (find)
-import Data.Maybe (fromJust)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import AstTypes
+import CollectionHelpers
 
 -- method signature type: return type + parameter types
 data Sig = Sig {
@@ -42,15 +42,15 @@ sv _ NullType               = True
 -- and creates a substitution function
 ψ :: Prog -> OwnershipType -> Map.Map Context Context
 ψ prog (OwnershipType name c cs) =
-    Map.fromList $ zip (Owner : (classCtxs $ getClass prog name)) (c : cs)
+    newMap $ zip (Owner : (classCtxs $ getClass prog name)) (c : cs)
 
 -- given a substitution function, takes a polymorphic ownership type
 -- and replaces it with a concrete one
 σ :: Map.Map Context Context -> OwnershipType -> OwnershipType
 σ m o@(OwnershipType name c cs) =
     let contexts = do
-        ctx  <- Map.lookup c m
-        ctxs <- mapM (\c -> Map.lookup c m) cs
+        ctx  <- getVal c m
+        ctxs <- mapM (\c -> getVal c m) cs
         return $ ctx : ctxs
     in case contexts of
         Just (c' : cs') -> OwnershipType name c' cs'
@@ -59,10 +59,10 @@ sv _ NullType               = True
 σ _ NullType = NullType
 
 fieldDict :: Defn -> FieldDict
-fieldDict = Map.fromList . map (\(Field t n) -> (n, t)) . fields
+fieldDict = newMap . map (\(Field t n) -> (n, t)) . fields
 
 methodDict :: Defn -> MethodDict
-methodDict = Map.fromList .
+methodDict = newMap .
     map (\(Method t n args vars e) ->
         let (argNames, argTypes) = unzip $ varDictList args
         in (n, MDV (Sig argTypes t) argNames e $ varDict args)) . methods
@@ -71,7 +71,7 @@ varDictList :: [VarDec] -> [(VarName, OwnershipType)]
 varDictList = map (\(VarDec vt vn) -> (VarName vn, vt))
 
 varDict :: [VarDec] -> VarDict
-varDict = Map.fromList . varDictList
+varDict = newMap . varDictList
 
 getClass :: Prog -> Name -> Defn
 getClass prog name =
@@ -101,16 +101,16 @@ typeCheck prog@(Prog defns varDecs expr) = do
 checkClass :: P -> Defn -> Either String ()
 checkClass prog defn@(Defn n cs fs ms) =
     let fDict = fieldDict defn
-        sigma = Set.insert Owner $ Set.fromList cs
+        sigma = Set.insert Owner $ newSet cs
         gamma = Map.singleton This $ OwnershipType n Owner cs
     in do
-        mapM_ (checkType prog sigma) $ Map.elems fDict
+        mapM_ (checkType prog sigma) $ vals fDict
         mapM_ (checkMethod prog sigma gamma) ms
 
 checkType :: P -> Σ -> OwnershipType -> Either String OwnershipType
 checkType prog sigma o@(OwnershipType _ t ts) =
-    let newSigma = Set.fromList [Rep, NoRep] `Set.union` sigma
-    in if (t `Set.member` newSigma) && (Set.fromList ts `Set.isSubsetOf` newSigma)
+    let newSigma = newSet [Rep, NoRep] `Set.union` sigma
+    in if (t `Set.member` newSigma) && (newSet ts `Set.isSubsetOf` newSigma)
        then return o
        else Left $ "checkType error: " ++ show o
 checkType _ _ UnitType                        =
@@ -119,7 +119,7 @@ checkType _ _ NullType                        =
     return NullType
 
 checkAsgn prog sigma gamma x e =
-    case Map.lookup x gamma of
+    case getVal x gamma of
         Just t -> do
             t' <- checkExpr prog sigma gamma e
             if typesMatch t t'
@@ -131,7 +131,7 @@ checkAsgn prog sigma gamma x e =
 checkFieldRead prog sigma gamma e fd = do
     t <- checkExpr prog sigma gamma e
     let c = getClass prog $ tName t
-    case Map.lookup fd (fieldDict c) of
+    case getVal fd (fieldDict c) of
         Just t' ->
             if sv e t'
             then return $ σ (ψ prog t) t'
@@ -140,7 +140,7 @@ checkFieldRead prog sigma gamma e fd = do
         Nothing -> Left $ "field " ++ show fd ++ " not defined in class " ++ show t
 
 checkVarExpr gamma v =
-    case Map.lookup v gamma of
+    case getVal v gamma of
         Just t  -> return t
         Nothing -> Left $ show v ++ " not in scope"
 
@@ -161,7 +161,7 @@ checkInvoc prog sigma gamma obj name args = do
     argTs <- mapM (checkExpr prog sigma gamma) args
     let subst                  = ψ prog objT
     let mDict                  = methodDict $ getClass prog $ tName objT
-    let Sig mArgTypes mRetType = case Map.lookup name mDict of
+    let Sig mArgTypes mRetType = case getVal name mDict of
             Just m  -> mdvSig m
             Nothing -> error $ "method with name " ++ name ++ " not in dictionary for class " ++ tName objT
     let expArgTs               = map (σ subst) mArgTypes

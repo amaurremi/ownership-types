@@ -54,12 +54,10 @@ data Prog = Prog {
     progExpr    :: Expr
 } deriving (Show)
 
-data OwnershipType =
-                     OwnershipType {
+data OwnershipType = OwnershipType {
                          tName  :: Name,
                          tOwner :: Context,
-                         tCtxs  :: [Context]
-                     }
+                         tCtxs  :: [Context] }
                    | NullType
                    | UnitType
     deriving (Eq, Ord, Show)
