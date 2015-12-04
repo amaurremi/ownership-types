@@ -2,10 +2,10 @@
 
 all:
 	alex src/Lexer.x
-	ghc -outputdir out -isrc --make src/Main.hs -o Main
+	ghc -outputdir out -isrc --make src/Main.hs -o owni
 
 compile:
-	ghc -outputdir out -isrc --make src/Main.hs -o Main
+	ghc -outputdir out -isrc --make src/Main.hs -o owni
 
 cabal:
 	cabal update

@@ -97,5 +97,5 @@
         ; (invoc (car engine) stop ())      ; car.engine.stop()
         (= e (new (Engine rep ())))         ; e = new rep Engine
         ; this should fail if uncommented:
-        (invoc car setEngine (e))           ; car.setEngine(e)
+;        (invoc car setEngine (e))           ; car.setEngine(e)
 )

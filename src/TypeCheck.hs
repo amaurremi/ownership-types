@@ -5,7 +5,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import AstTypes
-import CollectionHelpers
+import CollectionFuncs
 
 -- method signature type: return type + parameter types
 data Sig = Sig {
