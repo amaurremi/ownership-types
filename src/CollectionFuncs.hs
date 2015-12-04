@@ -2,6 +2,7 @@ module CollectionFuncs where
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import Data.Maybe
 
 (+++):: Ord a => a -> Set.Set a -> Set.Set a
 (+++) = Set.insert
@@ -23,3 +24,6 @@ newSet = Set.fromList
 
 getVal :: Ord k => k -> Map.Map k a -> Maybe a
 getVal = Map.lookup
+
+fromMaybe :: String -> Maybe a -> a
+fromMaybe msg = Data.Maybe.fromMaybe (error msg)

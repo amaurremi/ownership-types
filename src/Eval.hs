@@ -33,10 +33,26 @@ putStore s = do
     (_, δ) <- get
     put (s, δ)
 
+getStore :: RedState S
+getStore = do
+    (s, _) <- get
+    return s
+
 putStack :: Δ -> RedState ()
 putStack δ = do
     (s, _) <- get
     put (s, δ)
+
+getStack :: RedState Δ
+getStack = do
+    (_, δ) <- get
+    return δ
+
+getValFromStack :: VarName -> Δ -> O
+getValFromStack _ []      = error "empty stack"
+getValFromStack v (δ : _) = case v of
+    This      -> thisVal δ
+    VarName n -> fromMaybe ("identifier " ++ n ++ " not on stack") $ getVal n $ stackVal δ
 
 ---------------------
 -- Reduction rules --
@@ -44,9 +60,7 @@ putStack δ = do
 
 eval :: Prog -> F
 eval e = let (o, (s, _)) = runState (eval' e) (Map.empty, [])
-         in case getVal o s of
-            Just f  -> f
-            Nothing -> error $ "object " ++ show o ++ " is not in the store"
+         in fromMaybe ("object " ++ show o ++ " is not in the store") $ getVal o s
 
 eval' :: Prog -> Environment
 eval' prog = case progExpr prog of
@@ -62,7 +76,7 @@ eval' prog = case progExpr prog of
 
 evalNew :: Prog -> OwnershipType -> Environment
 evalNew prog t = do
-    (s, δ) <- get
+    s <- getStore
     let o = newO s
     let fields = dom $ fieldDict (getClass prog (tName t))
     putStore $ Map.union s $ Map.singleton o $ newMap [(f, Null) | f <- Set.toList fields]
@@ -85,8 +99,8 @@ evalSeq es = do
 
 evalVarExpr :: VarName -> Environment
 evalVarExpr v = do
-    (s, δ) <- get
-    return $ error ""
+    δ <- getStack
+    return $ getValFromStack v δ
 
 evalAsgn :: VarName -> Expr -> Environment
 evalAsgn lhs rhs = do
