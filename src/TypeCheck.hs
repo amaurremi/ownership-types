@@ -165,9 +165,14 @@ checkInvoc prog sigma gamma obj name args = do
             Just m  -> mdvSig m
             Nothing -> error $ "method with name " ++ name ++ " not in dictionary for class " ++ tName objT
     let expArgTs               = map (σ subst) mArgTypes
-    if (all (sv obj) (mRetType : mArgTypes)) && (foldl (&&) True $ zipWith typesMatch expArgTs argTs)
-        then return $ σ subst mRetType
-        else Left $ "invoc type error: " ++ show obj ++ "." ++ name
+        staticVisibility       = all (sv obj) (mRetType : mArgTypes)
+        matchingTypes          = foldl (&&) True $ zipWith typesMatch expArgTs argTs
+        invocErrorInfo         = "\nreceiver expression: " ++ show obj ++ "\ncallee name: " ++ name
+    if not staticVisibility
+        then Left $ "static visibility check failed in invocation:" ++ invocErrorInfo
+        else if not matchingTypes
+            then Left $ "argument types do not match parameter types in invocation:" ++ invocErrorInfo
+            else return $ σ subst mRetType
 
 checkExpr :: P -> Σ -> Γ -> Expr -> Either String OwnershipType
 checkExpr prog sigma gamma e = case e of

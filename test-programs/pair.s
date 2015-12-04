@@ -33,7 +33,7 @@
               ( a (Pair rep (rep norep))    () () (this pair1) )
               ( b (Pair norep (rep norep )) () () (this pair2) )
               ( x (X rep ())                () () ((this pair1) fst) )
-              ( y (Y rep ())                () () ((this pair1) snd) )
+              ( y (Y norep ())              () () ((this pair1) snd) )
               ( updateX Unit                () () (= ((this pair1) fst) (new (X rep ()))) )
           )
   )
