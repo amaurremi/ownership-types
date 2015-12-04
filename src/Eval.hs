@@ -54,22 +54,28 @@ getValFromStack v (δ : _) = case v of
     This      -> thisVal δ
     VarName n -> fromMaybe ("identifier " ++ n ++ " not on stack") $ getVal n $ stackVal δ
 
+pushOnStack :: VarName -> O -> Δ -> Δ
+pushOnStack _ _ []       = error "no stack frame"
+pushOnStack v o ((StackFrame t s) : δs) = case v of
+    This      -> StackFrame o s : δs
+    VarName n -> StackFrame t (Map.insert n o s) : δs
+
 ---------------------
 -- Reduction rules --
 ---------------------
 
 eval :: Prog -> F
-eval e = let (o, (s, _)) = runState (eval' e) (Map.empty, [])
+eval p = let (o, (s, _)) = runState (evalExpr p $ progExpr p) (Map.empty, [])
          in fromMaybe ("object " ++ show o ++ " is not in the store") $ getVal o s
 
-eval' :: Prog -> Environment
-eval' prog = case progExpr prog of
+evalExpr :: Prog -> Expr -> Environment
+evalExpr prog expr = case expr of
     New t            -> evalNew prog t
     Null             -> evalNull
     End              -> evalEnd
     Seq es           -> evalSeq es
     VarExpr v        -> evalVarExpr v
-    Asgn l r         -> evalAsgn l r
+    Asgn l r         -> evalAsgn prog l r
     FieldRead o n    -> evalFieldRead o n
     FieldWrite o n e -> evalFieldWrite o n e
     Invoc o n args   -> evalInvoc o n args
@@ -102,10 +108,12 @@ evalVarExpr v = do
     δ <- getStack
     return $ getValFromStack v δ
 
-evalAsgn :: VarName -> Expr -> Environment
-evalAsgn lhs rhs = do
-    (s, δ) <- get
-    return $ error ""
+evalAsgn :: Prog -> VarName -> Expr -> Environment
+evalAsgn prog lhs rhs = do
+    e <- evalExpr prog rhs
+    δ <- getStack
+    putStack $ pushOnStack lhs e δ
+    return e
 
 evalFieldRead :: Expr ->  Name -> Environment
 evalFieldRead obj name = do
