@@ -1,6 +1,6 @@
 *.iml
 /dist
 /out
-/Main
+/owni
 /src/Lexer.hs
 /.idea
