@@ -81,7 +81,7 @@ evalExpr prog expr = case expr of
     New t            -> evalNew prog t
     Null             -> evalNull
     End              -> evalEnd
-    Seq es           -> evalSeq es
+    Seq es           -> evalSeq prog es
     VarExpr v        -> evalVarExpr v
     Asgn l r         -> evalAsgn prog l r
     FieldRead o n    -> evalFieldRead prog o n
@@ -104,10 +104,10 @@ evalNull = do
 evalEnd :: Environment
 evalEnd = return ValNull
 
-evalSeq :: [Expr] -> Environment
-evalSeq es = do
-     (s, δ) <- get
-     return $ error ""
+evalSeq :: Prog -> [Expr] -> Environment
+evalSeq prog es = do
+     es' <- mapM (evalExpr prog) es
+     return $ last es'
 
 evalVarExpr :: VarName -> Environment
 evalVarExpr v = do
