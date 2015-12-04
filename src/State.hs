@@ -14,10 +14,8 @@ instance Applicative (State s) where
 instance Functor (State s) where
     fmap _ _ = error ""
 
-
 get :: State s s
 get = State $ \st -> (st, st)
 
 put :: s -> State s ()
 put newState = State $ \_ -> ((), newState)
-

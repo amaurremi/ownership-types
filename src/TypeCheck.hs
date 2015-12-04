@@ -7,22 +7,6 @@ import qualified Data.Set as Set
 import AstTypes
 import CollectionFuncs
 
--- method signature type: return type + parameter types
-data Sig = Sig {
-    sigArgTypes :: [OwnershipType],
-    sigRetType  :: OwnershipType
-}
-
-type VarDict = Map.Map VarName OwnershipType
-type FieldDict = Map.Map Name OwnershipType
-data MethodDictVal = MDV {
-    mdvSig :: Sig,
-    mdvArgs :: [VarName],
-    mdvExpr :: Expr,
-    mdvVarDict :: VarDict
-}
-type MethodDict = Map.Map Name MethodDictVal
-
 type P = Prog
 type Σ = Set.Set Context
 type Γ = Map.Map VarName OwnershipType
@@ -57,28 +41,6 @@ sv _ NullType               = True
         Nothing         -> o
 σ _ UnitType = UnitType
 σ _ NullType = NullType
-
-fieldDict :: Defn -> FieldDict
-fieldDict = newMap . map (\(Field t n) -> (n, t)) . fields
-
-methodDict :: Defn -> MethodDict
-methodDict = newMap .
-    map (\(Method t n args vars e) ->
-        let (argNames, argTypes) = unzip $ varDictList args
-        in (n, MDV (Sig argTypes t) argNames e $ varDict args)) . methods
-
-varDictList :: [VarDec] -> [(VarName, OwnershipType)]
-varDictList = map (\(VarDec vt vn) -> (VarName vn, vt))
-
-varDict :: [VarDec] -> VarDict
-varDict = newMap . varDictList
-
-getClass :: Prog -> Name -> Defn
-getClass prog name =
-    let defs = defns prog
-    in case find (\def -> className def == name) defs of
-        Just defn -> defn
-        Nothing   -> error $ "no class of type " ++ name ++ "\nAvailable classes: " ++ unwords (map className defs)
 
 -- type checking for assignment
 -- typesMatch lhsType rhsType should succeed if rhsType is of type Null

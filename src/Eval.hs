@@ -22,17 +22,35 @@ type Δ = [StackFrame]
 -- a store
 type S = Map.Map O F
 
-type Environment = State (S, Δ) Expr
+type RedState    = State (S, Δ)
+type Environment = RedState O
 
 newO :: S -> O
 newO store = maximum (dom store) + 1
 
-eval :: Expr -> Expr
-eval e = fst $ runState (eval' e) (Map.empty, [])
+putStore :: S -> RedState ()
+putStore s = do
+    (_, δ) <- get
+    put (s, δ)
 
-eval' :: Expr -> Environment
-eval' expr = case expr of
-    New t            -> evalNew t
+putStack :: Δ -> RedState ()
+putStack δ = do
+    (s, _) <- get
+    put (s, δ)
+
+---------------------
+-- Reduction rules --
+---------------------
+
+eval :: Prog -> F
+eval e = let (o, (s, _)) = runState (eval' e) (Map.empty, [])
+         in case getVal o s of
+            Just f  -> f
+            Nothing -> error $ "object " ++ show o ++ " is not in the store"
+
+eval' :: Prog -> Environment
+eval' prog = case progExpr prog of
+    New t            -> evalNew prog t
     Null             -> evalNull
     End              -> evalEnd
     Seq es           -> evalSeq es
@@ -42,29 +60,50 @@ eval' expr = case expr of
     FieldWrite o n e -> evalFieldWrite o n e
     Invoc o n args   -> evalInvoc o n args
 
-evalNew :: OwnershipType -> Environment
-evalNew = error ""
+evalNew :: Prog -> OwnershipType -> Environment
+evalNew prog t = do
+    (s, δ) <- get
+    let o = newO s
+    let fields = dom $ fieldDict (getClass prog (tName t))
+    putStore $ Map.union s $ Map.singleton o $ newMap [(f, Null) | f <- Set.toList fields]
+    return o
 
 evalNull :: Environment
-evalNull = error ""
+evalNull = do
+    (s, δ) <- get
+    return $ error ""
 
 evalEnd :: Environment
-evalEnd = error ""
+evalEnd = do
+     (s, δ) <- get
+     return $ error ""
 
 evalSeq :: [Expr] -> Environment
-evalSeq es = error ""
+evalSeq es = do
+     (s, δ) <- get
+     return $ error ""
 
 evalVarExpr :: VarName -> Environment
-evalVarExpr v = error ""
+evalVarExpr v = do
+    (s, δ) <- get
+    return $ error ""
 
 evalAsgn :: VarName -> Expr -> Environment
-evalAsgn lhs rhs = error ""
+evalAsgn lhs rhs = do
+    (s, δ) <- get
+    return $ error ""
 
 evalFieldRead :: Expr ->  Name -> Environment
-evalFieldRead obj name = error ""
+evalFieldRead obj name = do
+     (s, δ) <- get
+     return $ error ""
 
 evalFieldWrite :: Expr -> Name -> Expr -> Environment
-evalFieldWrite obj name expr = error ""
+evalFieldWrite obj name expr = do
+    (s, δ) <- get
+    return $ error ""
 
 evalInvoc :: Expr -> Name -> [Expr] -> Environment
-evalInvoc obj method args = error ""
+evalInvoc obj method args = do
+    (s, δ) <- get
+    return $ error ""
