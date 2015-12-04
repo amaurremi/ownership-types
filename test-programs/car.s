@@ -45,7 +45,16 @@
           )
           ; methods
           (
-             ; todo constructors??
+              (
+                  constructor
+                  Unit
+                  ()
+                  ()
+                  ( seq
+                      (= (this engine) (new (Engine rep ())))
+                      (= (this driver) null)
+                  )
+              )
               (
                   getEngine              ; method name
                   (Engine rep ())        ; return type
@@ -93,6 +102,7 @@
     seq                                     ; sequence of expressions
         (= bob (new (Driver norep ())))     ; bob = new norep Driver
         (= car (new (Car norep ())))        ; car = new norep Car
+        (invoc car constructor ())             ; car.constructor()
         (= (car driver) bob)                ; car.driver = bob
         (invoc car go ())                   ; car.go()
         ; the following line should fail if uncommented:
