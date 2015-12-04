@@ -24,6 +24,46 @@
               )
           )
   )
+
+  ( class XStack (m)
+          ; fields
+          (
+              (top (Link rep (m)))
+          )
+          ;methods
+          (
+              (XStack Unit () () (= (this top) null))
+
+              (push Unit ((data (X m ())))
+                    (
+                        (newTop (Link rep (m)))
+                        (dataLink (Link rep (m)))
+                    )
+                    ( seq
+                        ; dataLink = new Link(data)
+                        (= dataLink (new (Link rep (m))))
+                        (invoc dataLink constructor (data))
+
+                        (= newTop dataLink)
+                        (= (newTop next) (this top))
+                        (= (this top) newTop)
+                    )
+              )
+
+              (
+                  pop (X m ()) ()
+                      (
+                          (oldTop (Link rep (m)))
+                          (top (Link rep (m)))
+                      )
+                      ( seq
+                          (= oldTop (this top))
+                          (= top (oldTop next))
+                          ((this top) data)
+                      )
+              )
+          )
+  )
 )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; LOCAL VARS FOR MAIN ;;;
