@@ -8,8 +8,8 @@ This table shows the correspondence between the language implemented here and de
 
 |                | Syntax      | Type system    | Execution environment | Reduction rules |
 |----------------|-------------|----------------|-----------------------|-----------------|
-| Paper          | Page 52     | Figure 4       | Figure 6              | Figure 5        |
 | Implementation | `Parser.hs` | `TypeCheck.hs` | `ExecEnvironment.hs`  | `Eval.hs`       |
+| Paper          | Page 52     | Figure 4       | Figure 6              | Figure 5        |
 
 The only difference is that this implementation aims to support typing for `null` objects and for `void` methods.
 
