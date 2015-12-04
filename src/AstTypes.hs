@@ -6,6 +6,10 @@ import Data.List (find)
 
 import CollectionFuncs
 
+---------------
+-- AST types --
+---------------
+
 data Defn = Defn {
     className :: Name,
     classCtxs :: [Context],
@@ -80,14 +84,21 @@ data Sig = Sig {
     sigRetType  :: OwnershipType
 }
 
+-------------------
+-- AST traversal --
+-------------------
+
 type VarDict = Map.Map VarName OwnershipType
+
 type FieldDict = Map.Map Name OwnershipType
+
 data MethodDictVal = MDV {
     mdvSig :: Sig,
     mdvArgs :: [VarName],
     mdvExpr :: Expr,
     mdvVarDict :: VarDict
 }
+
 type MethodDict = Map.Map Name MethodDictVal
 
 fieldDict :: Defn -> FieldDict

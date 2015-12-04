@@ -9,13 +9,18 @@ import State
 
 -- object identifier
 type O = Int
+
+-- an object identifier or null
+data Value = Val O
+           | ValNull
+    deriving (Eq, Show)
+
 -- object (map from field names to values)
-type F = Map.Map Name Expr
+type F = Map.Map Name Value
 
 -- a stack frame
 data StackFrame = StackFrame { thisVal  :: O,
                                stackVal :: Map.Map Name O }
-
 -- a stack
 type Δ = [StackFrame]
 
@@ -23,7 +28,8 @@ type Δ = [StackFrame]
 type S = Map.Map O F
 
 type RedState    = State (S, Δ)
-type Environment = RedState O
+
+type Environment = RedState Value
 
 newO :: S -> O
 newO store = maximum (dom store) + 1
@@ -66,7 +72,9 @@ pushOnStack v o ((StackFrame t s) : δs) = case v of
 
 eval :: Prog -> F
 eval p = let (o, (s, _)) = runState (evalExpr p $ progExpr p) (Map.empty, [])
-         in fromMaybe ("object " ++ show o ++ " is not in the store") $ getVal o s
+         in case o of
+            ValNull -> Map.empty
+            Val o'  -> fromMaybe ("object " ++ show o' ++ " is not in the store") $ getVal o' s
 
 evalExpr :: Prog -> Expr -> Environment
 evalExpr prog expr = case expr of
@@ -76,17 +84,17 @@ evalExpr prog expr = case expr of
     Seq es           -> evalSeq es
     VarExpr v        -> evalVarExpr v
     Asgn l r         -> evalAsgn prog l r
-    FieldRead o n    -> evalFieldRead o n
-    FieldWrite o n e -> evalFieldWrite o n e
-    Invoc o n args   -> evalInvoc o n args
+    FieldRead o n    -> evalFieldRead prog o n
+    FieldWrite o n e -> evalFieldWrite prog o n e
+    Invoc o n args   -> evalInvoc prog o n args
 
 evalNew :: Prog -> OwnershipType -> Environment
 evalNew prog t = do
     s <- getStore
     let o = newO s
     let fields = dom $ fieldDict (getClass prog (tName t))
-    putStore $ Map.union s $ Map.singleton o $ newMap [(f, Null) | f <- Set.toList fields]
-    return o
+    putStore $ Map.union s $ Map.singleton o $ newMap [(f, ValNull) | f <- Set.toList fields]
+    return $ Val o
 
 evalNull :: Environment
 evalNull = do
@@ -94,9 +102,7 @@ evalNull = do
     return $ error ""
 
 evalEnd :: Environment
-evalEnd = do
-     (s, δ) <- get
-     return $ error ""
+evalEnd = return ValNull
 
 evalSeq :: [Expr] -> Environment
 evalSeq es = do
@@ -106,26 +112,42 @@ evalSeq es = do
 evalVarExpr :: VarName -> Environment
 evalVarExpr v = do
     δ <- getStack
-    return $ getValFromStack v δ
+    return $ Val $ getValFromStack v δ
 
 evalAsgn :: Prog -> VarName -> Expr -> Environment
 evalAsgn prog lhs rhs = do
-    e <- evalExpr prog rhs
-    δ <- getStack
-    putStack $ pushOnStack lhs e δ
-    return e
+    o <- evalExpr prog rhs
+    case o of
+        ValNull -> error "assignment to null"
+        Val o'  -> do
+            δ <- getStack
+            putStack $ pushOnStack lhs o' δ
+            return o
 
-evalFieldRead :: Expr ->  Name -> Environment
-evalFieldRead obj name = do
-     (s, δ) <- get
-     return $ error ""
+evalFieldRead :: Prog -> Expr ->  Name -> Environment
+evalFieldRead prog obj name = do
+    o <- evalExpr prog obj
+    case o of
+        ValNull -> error "null pointer exception on field read"
+        Val o'  -> do
+            s <- getStore
+            let f = fromMaybe ("store does not contain object " ++ show o') $ getVal o' s
+            let v = fromMaybe ("object " ++ show o' ++ " does not contain field " ++ name) $ getVal name f
+            return v
 
-evalFieldWrite :: Expr -> Name -> Expr -> Environment
-evalFieldWrite obj name expr = do
-    (s, δ) <- get
-    return $ error ""
+evalFieldWrite :: Prog -> Expr -> Name -> Expr -> Environment
+evalFieldWrite prog obj name expr = do
+    o  <- evalFieldRead prog obj name
+    case o of
+        ValNull -> error "field write to null"
+        Val o'  -> do
+            v  <- evalExpr prog expr
+            s  <- getStore
+            let f = fromMaybe (error "object " ++ show o' ++ " not in the store") $ getVal o' s
+            putStore $ Map.insert o' (Map.insert name v f) s
+            return v
 
-evalInvoc :: Expr -> Name -> [Expr] -> Environment
-evalInvoc obj method args = do
+evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment
+evalInvoc prog obj method args = do
     (s, δ) <- get
     return $ error ""
