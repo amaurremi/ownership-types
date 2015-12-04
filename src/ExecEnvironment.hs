@@ -18,22 +18,14 @@ data Value = ValObj O
     deriving (Eq, Ord, Show)
 
 -- stack frame
-data Δ = Δ { thisVal  :: Value,
-             stackVal :: Map.Map Name Value }
+data Δ = Δ { thisVal  :: O,
+             stackVal :: Map.Map Name O }
 
 type Stack = [Δ]
 
 -- stack frame typing
 data D = D { thisType  :: OwnershipType,
              stackType :: Map.Map Name OwnershipType }
-
-getStackVal :: VarName -> Δ -> Maybe Value
-getStackVal This δ     = Just $ thisVal δ
-getStack (VarName n) δ = getVal $ stackVal δ
-
-getStackType :: VarName -> D -> Maybe OwnershipType
-getStackType This d        = Just $ thisType d
-getStackType (VarName n) d = getVal n $ stackType d
 
 -----------
 -- Rules --
@@ -55,10 +47,5 @@ nullType :: E -> OwnershipType -> Bool
 nullType e t = (storeType e) && (typeType (dom e) t)
 
 stackFrame :: E -> Δ -> D -> Bool
-stackFrame e δ d =
-    case do
-            o <- getStackVal This δ
-            t <- getStackType This d
-            return (o, t) of
-        Just (o, t) -> error "" --(objectType E o)
-        Nothing     -> error ""
+stackFrame e (Δ this δ) (D thisT d) =
+    (objectType e this) && all ()

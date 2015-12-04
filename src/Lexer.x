@@ -30,8 +30,7 @@ tokens :-
     \=                                      { \p _ -> TokAsgn p }
 
 {
-data Token =
-             TokClass AlexPosn
+data Token = TokClass AlexPosn
            | TokNew AlexPosn
            | TokRep AlexPosn
            | TokNoRep AlexPosn
