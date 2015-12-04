@@ -122,9 +122,3 @@ getClass prog name =
     in case find (\def -> className def == name) defs of
         Just defn -> defn
         Nothing   -> error $ "no class of type " ++ name ++ "\nAvailable classes: " ++ unwords (map className defs)
-
-getMethod :: Defn -> Name -> Method
-getMethod defn name = case filter (\m -> className m == name) $ methods defn of
-    []  -> error "no method named " ++ name ++ " in class" ++ className defn
-    [m] -> m
-    _   -> error $ "multiple method definitions of name " ++ name ++ " in class " ++ className defn

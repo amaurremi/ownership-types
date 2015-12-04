@@ -9,6 +9,7 @@ import State
 
 -- object identifier
 data O = O { oRef :: Int, oType :: OwnershipType }
+    deriving (Eq, Ord, Show)
 
 -- an object identifier or null
 data Value = Val O
@@ -31,8 +32,8 @@ type RedState    = State (S, Δ)
 
 type Environment = RedState Value
 
-newO :: S -> O
-newO store = maximum (dom store) + 1
+newO :: S -> OwnershipType -> O
+newO store = O (1 + (oRef $ maximum (dom store)))
 
 putStore :: S -> RedState ()
 putStore s = do
@@ -91,7 +92,7 @@ evalExpr prog expr = case expr of
 evalNew :: Prog -> OwnershipType -> Environment
 evalNew prog t = do
     s <- getStore
-    let o = newO s
+    let o = newO s t
     let fields = dom $ fieldDict (getClass prog (tName t))
     putStore $ Map.union s $ Map.singleton o $ newMap [(f, ValNull) | f <- Set.toList fields]
     return $ Val o
@@ -153,8 +154,10 @@ evalInvoc prog e md es = do
         Val o'  -> do
             vs       <- mapM (evalExpr prog) es
             oldStack <- getStack                    -- remember stack pointer
-            let mDict = methodDict $ getClass prog $
-            let newStackFrame = StackFrame o $
+            let className = tName $ oType o'
+            let mDict = methodDict $ getClass prog className
+            let (MDV sig params body vDict) = fromMaybe ("class " ++ className ++ " does not contain method " ++ md) $ getVal md mDict
+            let newStackFrame = StackFrame o' $ error ""
             putStack $ newStackFrame : oldStack     -- push new stack frame
             putStack oldStack                       -- pop stack frame
-            return v
+            return $ error ""
