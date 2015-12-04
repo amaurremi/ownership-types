@@ -8,7 +8,7 @@ import CollectionFuncs
 import State
 
 -- object identifier
-type O = Int
+data O = O { oRef :: Int, oType :: OwnershipType }
 
 -- an object identifier or null
 data Value = Val O
@@ -97,9 +97,7 @@ evalNew prog t = do
     return $ Val o
 
 evalNull :: Environment
-evalNull = do
-    (s, δ) <- get
-    return $ error ""
+evalNull = return ValNull
 
 evalEnd :: Environment
 evalEnd = return ValNull
@@ -143,11 +141,20 @@ evalFieldWrite prog obj name expr = do
         Val o'  -> do
             v  <- evalExpr prog expr
             s  <- getStore
-            let f = fromMaybe (error "object " ++ show o' ++ " not in the store") $ getVal o' s
+            let f = fromMaybe (error $ "object " ++ show o' ++ " not in the store") $ getVal o' s
             putStore $ Map.insert o' (Map.insert name v f) s
             return v
 
 evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment
-evalInvoc prog obj method args = do
-    (s, δ) <- get
-    return $ error ""
+evalInvoc prog e md es = do
+    o        <- evalExpr prog e
+    case o of
+        ValNull -> error "method invocation on null object"
+        Val o'  -> do
+            vs       <- mapM (evalExpr prog) es
+            oldStack <- getStack                    -- remember stack pointer
+            let mDict = methodDict $ getClass prog $
+            let newStackFrame = StackFrame o $
+            putStack $ newStackFrame : oldStack     -- push new stack frame
+            putStack oldStack                       -- pop stack frame
+            return v
