@@ -184,7 +184,7 @@ evalFieldWrite prog obj name expr = do
                 v <- evalExpr prog expr
                 s <- getStore
                 let (F f sticky) = fromMaybe (error $ "object " ++ show o' ++ " not in the store") $ getVal o' s
-                putStore $ Map.insert o' (F (Map.insert name v f) sticky) s
+                putStore $ Map.insert o' (F (Map.insert name v f) $ sticky + 1) s
                 return v
 
 evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment
