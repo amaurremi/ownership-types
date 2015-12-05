@@ -77,3 +77,11 @@ owner context is `rep` and the object's owner was freed.
 
 An object can be freed if its stickiness is <= 1, and if the only reference to the object is a variable
 that is popped from the stack. 
+
+Currently implemented:
+- run-time objects have a stickiness degree;
+- at each assignment the stickiness is increased by a number depending on
+  whether we are assigning to a field or variable;
+- when we pop a stack frame, we remove the objects from the store whose stickiness is <= 1.
+
+The rest still needs to be implemented, and the current implementation needs to be tested.
