@@ -53,12 +53,13 @@ typesMatch t t'       = t == t'
 -- Type checking --
 -------------------
 
-typeCheck :: Prog -> Either String OwnershipType
+typeCheck :: Prog -> Either String Prog
 typeCheck prog@(Prog defns varDecs expr) = do
     let (varNames, varTypes) = unzip $ varDictList varDecs
     mapM_ (checkClass prog) defns
     mapM_ (checkType prog Set.empty) varTypes
     checkExpr prog Set.empty (varDict varDecs) expr
+    return prog
 
 checkClass :: P -> Defn -> Either String ()
 checkClass prog defn@(Defn n cs fs ms) =

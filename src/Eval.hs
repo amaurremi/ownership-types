@@ -22,6 +22,8 @@ type F = Map.Map Name Value
 -- a stack frame
 data StackFrame = StackFrame { thisVal  :: O,
                                stackVal :: Map.Map Name Value }
+    deriving (Eq, Show)
+
 -- a stack
 type Δ = [StackFrame]
 
@@ -33,7 +35,9 @@ type RedState    = State (S, Δ)
 type Environment = RedState Value
 
 newO :: S -> OwnershipType -> O
-newO store = O (1 + (oRef $ maximum (dom store)))
+newO store = case map oRef $ Set.toList $ dom store of
+    []   -> O 1
+    refs -> O (1 + maximum refs)
 
 putStore :: S -> RedState ()
 putStore s = do
@@ -67,15 +71,39 @@ pushOnStack v o ((StackFrame t s) : δs) = case v of
     This      -> StackFrame o s : δs
     VarName n -> StackFrame t (Map.insert n (Val o) s) : δs
 
+popStackFrame :: RedState ()
+popStackFrame = do
+    δ <- getStack
+    case δ of
+        []     -> error "attempt to pop stack frame from empty stack"
+        _ : fs -> putStack fs
+
+pushStackFrame :: StackFrame -> RedState ()
+pushStackFrame f = do
+    δ <- getStack
+    putStack $ f : δ
+
 ---------------------
 -- Reduction rules --
 ---------------------
 
-eval :: Prog -> F
-eval p = let (o, (s, _)) = runState (evalExpr p $ progExpr p) (Map.empty, [])
+-- reduces the program to an expression;
+-- returns the resulting object (map from fields to values) and the states of the stack and store
+eval :: Prog -> (F, S, Δ)
+eval p = let (o, (s, δ)) = runState (evalProg p) (Map.empty, [])
          in case o of
-            ValNull -> Map.empty
-            Val o'  -> fromMaybe ("object " ++ show o' ++ " is not in the store") $ getVal o' s
+            ValNull -> (Map.empty, s, δ)
+            Val o'  -> let f = fromMaybe ("object " ++ show o' ++ " is not in the store") $ getVal o' s
+                       in (f, s, δ)
+
+evalProg :: Prog -> Environment
+evalProg prog = do
+    let locals = newMap $ map (\(VarDec t n) -> (VarName n, t)) $ progVarDecs prog
+    let frame  = createStackFrame (O 0 NullType) [] [] $ locals
+    pushStackFrame frame
+    result <- evalExpr prog $ progExpr prog
+    popStackFrame
+    return result
 
 evalExpr :: Prog -> Expr -> Environment
 evalExpr prog expr = case expr of
@@ -136,15 +164,15 @@ evalFieldRead prog obj name = do
 
 evalFieldWrite :: Prog -> Expr -> Name -> Expr -> Environment
 evalFieldWrite prog obj name expr = do
-    o  <- evalFieldRead prog obj name
-    case o of
-        ValNull -> error "field write to null"
-        Val o'  -> do
-            v  <- evalExpr prog expr
-            s  <- getStore
-            let f = fromMaybe (error $ "object " ++ show o' ++ " not in the store") $ getVal o' s
-            putStore $ Map.insert o' (Map.insert name v f) s
-            return v
+        o <- evalExpr prog obj
+        case o of
+            ValNull -> error $ "field write on null object; field name " ++ name
+            Val o' -> do
+                v <- evalExpr prog expr
+                s <- getStore
+                let f = fromMaybe (error $ "object " ++ show o' ++ " not in the store") $ getVal o' s
+                putStore $ Map.insert o' (Map.insert name v f) s
+                return v
 
 evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment
 evalInvoc prog e md es = do
@@ -153,18 +181,20 @@ evalInvoc prog e md es = do
         ValNull -> error "method invocation on null object"
         Val o'  -> do
             vs       <- mapM (evalExpr prog) es
-            oldStack <- getStack                            -- remember stack pointer
             let className                 = tName $ oType o'
                 mDict                     = methodDict $ getClass prog className
                 noMethodMsg               = "class " ++ className ++ " does not contain method " ++ md
                 (MDV _ params body vDict) = fromMaybe noMethodMsg $ getVal md mDict
-                paramNames                = map vName $ filter (/= This) params
-                argsToVals                = newMap $ paramNames `zip` vs
-                locMap                    = Map.mapKeys vName $ Map.filterWithKey (\k _ -> k /= This) vDict
-                locsToNull                = Map.map (\_ -> ValNull) locMap
-                newStackFrame             = StackFrame o' $ Map.union argsToVals locsToNull
+                newStackFrame             = createStackFrame o' params vs vDict
                 in do
-                    putStack $ newStackFrame : oldStack     -- push new stack frame
+                    pushStackFrame newStackFrame
                     v' <- evalExpr prog body
-                    putStack oldStack                       -- pop stack frame
+                    popStackFrame
                     return v'
+
+createStackFrame this params vs vDict =
+    let paramNames = map vName $ filter (/= This) params
+        argsToVals = newMap $ paramNames `zip` vs
+        locMap     = Map.mapKeys vName $ Map.filterWithKey (\k _ -> k /= This) vDict
+        locsToNull = Map.map (\_ -> ValNull) locMap
+    in StackFrame this $ Map.union argsToVals locsToNull

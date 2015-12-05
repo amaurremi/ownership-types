@@ -16,4 +16,4 @@ main = do
         typeCheck parsedResult
     case result of
         Left error -> print error
-        Right prog -> print prog
+        Right prog -> print $ eval prog

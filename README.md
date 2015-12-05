@@ -6,14 +6,14 @@ as described in the original [paper](http://citeseerx.ist.psu.edu/viewdoc/summar
 The implemented language is based on S-expressions.
 This table shows the correspondence between the language implemented here and described in the paper.
 
-|                | Syntax      | Type system    | Execution environment | Reduction rules |
-|----------------|-------------|----------------|-----------------------|-----------------|
-| Implementation | `Parser.hs` | `TypeCheck.hs` | `ExecEnvironment.hs`  | `Eval.hs`       |
-| Paper          | Page 52     | Figure 4       | Figure 6              | Figure 5        |
+|                | Syntax      | Type system    | Reduction rules |
+|----------------|-------------|----------------|-----------------|
+| Implementation | `Parser.hs` | `TypeCheck.hs` | `Eval.hs`       |
+| Paper          | Page 52     | Figure 4       | Figure 5        |
 
 ## Set Up
 1. Install the [Haskell Platform](https://www.haskell.org/platform/).
-2. Clone this project and navigate into the project directory.
+2. Navigate into the project directory.
 3. Run `make cabal`. This will update [Cabal](https://www.haskell.org/cabal/) and install the
    [Alex](https://www.haskell.org/alex/) lexer generator package.
 
