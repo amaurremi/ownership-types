@@ -8,7 +8,7 @@ import AstTypes
 import CollectionFuncs
 import State
 
-doCollect = True
+doCollect = False
 
 -- object identifier
 data O = O { oRef :: Int, oType :: OwnershipType }
@@ -113,12 +113,12 @@ getFromStore :: O -> S -> F
 getFromStore o = fromMaybe ("object " ++ show o ++ " is not in the store") . getVal o
 
 -- increase the stickiness of an object
-makeSticky :: Value -> RedState ()
-makeSticky ValNull = return ()
-makeSticky (Val o) = do
+makeSticky :: Value -> Int -> RedState ()
+makeSticky ValNull _ = return ()
+makeSticky (Val o) n = do
     s <- getStore
     let (F f sticky) = getFromStore o s
-    putStore $ Map.insert o (F f $ sticky + 1) s
+    putStore $ Map.insert o (F f $ sticky + n) s
 
 ---------------------
 -- Reduction rules --
@@ -180,7 +180,7 @@ evalAsgn prog lhs rhs = do
     o <- evalExpr prog rhs
     δ <- getStack
     putStack $ pushOnStack lhs o δ
-    makeSticky o
+    makeSticky o 1
     return o
 
 evalFieldRead :: Prog -> Expr ->  Name -> Environment
@@ -204,7 +204,7 @@ evalFieldWrite prog obj name expr = do
                 s <- getStore
                 let (F f sticky) = getFromStore o' s
                 putStore $ Map.insert o' (F (Map.insert name v f) $ sticky) s
-                makeSticky v
+                makeSticky v 2
                 return v
 
 evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment

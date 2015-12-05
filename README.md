@@ -58,6 +58,9 @@ and for `void` methods.
 To invoke a field `x` inside an object it is necessary to explicitly invoke it on `this`.
 
 ## Garbage collection
+Garbage collection can be turned on and off with the `doCollect` flag in `Eval.hs`.
+It is turned off by default.
+
 This version of ownership types is not very amicable to garbage collection but
 Gregor had the following idea of taking advantage of this type system for automatic
 memory management:
