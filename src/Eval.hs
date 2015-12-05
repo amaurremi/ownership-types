@@ -25,6 +25,7 @@ data Value = Val O
 -- owner context is `rep` and the object's owner was freed.
 data F = F { fieldMap :: Map.Map Name Value,
              sticky :: Bool }
+    deriving (Eq, Show)
 
 -- a stack frame
 data StackFrame = StackFrame { thisVal  :: O,
