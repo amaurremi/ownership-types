@@ -26,8 +26,10 @@ tokToStr (TokInvoc _) = Just "invoc"
 tokToStr (TokEnd _) = Just "end"
 tokToStr (TokUnitType _) = Just "Unit"
 
-parsed :: [Token] -> Either ParseError Prog
-parsed = parse prog "source"
+parsed :: [Token] -> Either String Prog
+parsed tokens = case parse prog "source" tokens of
+    Left msg -> Left $ show msg
+    Right p  -> Right p
 
 type Parser a u = ParsecT [Token] u Identity a
 
