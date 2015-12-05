@@ -30,11 +30,18 @@ in the paper and to look at the comments in `car.s`.
 
 To run a program `name.s`, run `./owni test-programs/name.s`.
 
+### Type checking
 The example programs in the paper illustrate the restrictiveness of ownership types
 by including statements that would be allowed in a language like Java, but will
 fail in the presence of the ownership type system.
 Those lines are commented out in the test programs here, and you can uncomment them
 to see that the type checking works.
+
+### Reduction
+According to the syntax, a program consists of a list of classes, a list of local variables,
+and a main expression to be evaluated.
+When running a program `owni` will output the contents of the store as they are after
+the expression has been evaluated.
 
 ## Language Notes
 The example programs in the paper use syntax that is not supported by the language

@@ -1,5 +1,6 @@
 module Main where
 
+import Data.Map (toList)
 import System.Environment
 import System.IO
 
@@ -16,4 +17,6 @@ main = do
         typeCheck parsedResult
     case result of
         Left error -> print error
-        Right prog -> print $ eval prog
+        Right prog -> do
+            print "Store contents:"
+            putStrLn $ unlines $ map show $ toList $ eval prog

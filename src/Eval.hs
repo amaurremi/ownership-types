@@ -89,12 +89,8 @@ pushStackFrame f = do
 
 -- reduces the program to an expression;
 -- returns the resulting object (map from fields to values) and the states of the stack and store
-eval :: Prog -> (F, S, Δ)
-eval p = let (o, (s, δ)) = runState (evalProg p) (Map.empty, [])
-         in case o of
-            ValNull -> (Map.empty, s, δ)
-            Val o'  -> let f = fromMaybe ("object " ++ show o' ++ " is not in the store") $ getVal o' s
-                       in (f, s, δ)
+eval :: Prog -> S
+eval p = fst $ snd $ runState (evalProg p) (Map.empty, [])
 
 evalProg :: Prog -> Environment
 evalProg prog = do
