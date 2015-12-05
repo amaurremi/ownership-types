@@ -65,11 +65,11 @@ getValFromStack v (δ : _) = case v of
     This      -> Val $ thisVal δ
     VarName n -> fromMaybe ("identifier " ++ n ++ " not on stack") $ getVal n $ stackVal δ
 
-pushOnStack :: VarName -> O -> Δ -> Δ
+pushOnStack :: VarName -> Value -> Δ -> Δ
 pushOnStack _ _ []       = error "no stack frame"
 pushOnStack v o ((StackFrame t s) : δs) = case v of
-    This      -> StackFrame o s : δs
-    VarName n -> StackFrame t (Map.insert n (Val o) s) : δs
+    This      -> error "assignment to this"
+    VarName n -> StackFrame t (Map.insert n o s) : δs
 
 popStackFrame :: RedState ()
 popStackFrame = do
@@ -140,18 +140,15 @@ evalVarExpr v = do
 evalAsgn :: Prog -> VarName -> Expr -> Environment
 evalAsgn prog lhs rhs = do
     o <- evalExpr prog rhs
-    case o of
-        ValNull -> error "assignment to null"
-        Val o'  -> do
-            δ <- getStack
-            putStack $ pushOnStack lhs o' δ
-            return o
+    δ <- getStack
+    putStack $ pushOnStack lhs o δ
+    return o
 
 evalFieldRead :: Prog -> Expr ->  Name -> Environment
 evalFieldRead prog obj name = do
     o <- evalExpr prog obj
     case o of
-        ValNull -> error "null pointer exception on field read"
+        ValNull -> error $ "attempt to read field " ++ name ++ " on null receiver"
         Val o'  -> do
             s <- getStore
             let f = fromMaybe ("store does not contain object " ++ show o') $ getVal o' s
@@ -174,7 +171,7 @@ evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment
 evalInvoc prog e md es = do
     o <- evalExpr prog e
     case o of
-        ValNull -> error "method invocation on null object"
+        ValNull -> error $ "invocation of " ++ md ++ " method on null object"
         Val o'  -> do
             vs       <- mapM (evalExpr prog) es
             let className                 = tName $ oType o'

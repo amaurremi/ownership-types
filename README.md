@@ -30,6 +30,8 @@ in the paper and to look at the comments in `car.s`.
 
 To run a program `name.s`, run `./owni test-programs/name.s`.
 
+Note that the test programs also slightly differ from the paper to avoid null pointer exceptions.
+
 ### Type checking
 The example programs in the paper illustrate the restrictiveness of ownership types
 by including statements that would be allowed in a language like Java, but will

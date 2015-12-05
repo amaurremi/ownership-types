@@ -19,7 +19,14 @@
                 (snd (Y n ()))
           )
           ; methods
-          ()
+          (
+              ( constructor Unit () ()
+                    ( seq
+                        (= (this fst) (new (X m ())))
+                        (= (this snd) (new (Y n ())))
+                    )
+              )
+          )
   )
 
   ( class Intermediate ()
@@ -30,6 +37,12 @@
           )
           ; methods
           (
+              ( constructor Unit () ()
+                    ( seq
+                        (= (this pair1) (new (Pair rep (rep norep))))
+                        (= (this pair2) (new (Pair norep (rep norep))))
+                    )
+              )
               ( a (Pair rep (rep norep))    () () (this pair1) )
               ( b (Pair norep (rep norep )) () () (this pair2) )
               ( x (X rep ())                () () ((this pair1) fst) )
@@ -54,11 +67,13 @@
                      ; body
                      (
                          seq
+                         (= (this safe) (new (Intermediate norep ())))
+                         (invoc (this safe) constructor ())
                          ; the following three lines should fail if uncommented
                          ;    (= a (invoc safe a ()))
                          ;    (= b (invoc safe b ()))
                          ;    (= x (invoc safe x ()))
-                             (= y (invoc (this safe) y ()))
+                         (= y (invoc (this safe) y ()))
 
                          (invoc (this safe) updateX ())
                      )
