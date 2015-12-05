@@ -66,22 +66,34 @@ Gregor had the following idea of taking advantage of this type system for automa
 memory management:
 
 Each object is assigned a _stickiness_ degree. The stickiness is an overapproximation of the number
- of references to the object. 
+ of references to the object.
 If the object is sticky we can only free it if the object's
 owner context is `rep` and the object's owner was freed.
 
-- When an object is created its stickiness is set to zero.
-- Whenever there is an assignment to a local variable in which the object appears
-  on the right-hand side, the object stickiness increases by one.
-- If there is an assignment to a field the stickiness increases by two.
+Stickiness forms a partial order as follows:
 
-An object can be freed if its stickiness is <= 1, and if the only reference to the object is a variable
-that is popped from the stack. 
+`new-object` < `single-variable-assignment` < `sticky`
+
+and
+
+`new-object` < `single-field-assignment` < `sticky`
+
+- When an object is created its stickiness is set to `new-object`.
+- Whenever there is an assignment to a local variable in which the object appears
+  on the right-hand side, the object stickiness is increased.
+
+An object can be freed if
+
+- its stickiness `single-variable-assignment` and the variable
+  it is assigned to got popped from the stack;
+- its stickiness is `single-field-assignment` and the field it is assigned to;
+  got freed;
+- its owner got freed.
 
 Currently implemented:
 - run-time objects have a stickiness degree;
-- at each assignment the stickiness is increased by a number depending on
-  whether we are assigning to a field or variable;
-- when we pop a stack frame, we remove the objects from the store whose stickiness is <= 1.
+- at each assignment the stickiness is increased as described above;
+- when we pop a stack frame, we remove the objects from the store whose stickiness is
+  `single-variable-assignment`.
 
 The rest still needs to be implemented, and the current implementation needs to be tested.
