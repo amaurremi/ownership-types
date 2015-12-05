@@ -21,7 +21,7 @@ type F = Map.Map Name Value
 
 -- a stack frame
 data StackFrame = StackFrame { thisVal  :: O,
-                               stackVal :: Map.Map Name O }
+                               stackVal :: Map.Map Name Value }
 -- a stack
 type Δ = [StackFrame]
 
@@ -55,17 +55,17 @@ getStack = do
     (_, δ) <- get
     return δ
 
-getValFromStack :: VarName -> Δ -> O
+getValFromStack :: VarName -> Δ -> Value
 getValFromStack _ []      = error "empty stack"
 getValFromStack v (δ : _) = case v of
-    This      -> thisVal δ
+    This      -> Val $ thisVal δ
     VarName n -> fromMaybe ("identifier " ++ n ++ " not on stack") $ getVal n $ stackVal δ
 
 pushOnStack :: VarName -> O -> Δ -> Δ
 pushOnStack _ _ []       = error "no stack frame"
 pushOnStack v o ((StackFrame t s) : δs) = case v of
     This      -> StackFrame o s : δs
-    VarName n -> StackFrame t (Map.insert n o s) : δs
+    VarName n -> StackFrame t (Map.insert n (Val o) s) : δs
 
 ---------------------
 -- Reduction rules --
@@ -111,7 +111,7 @@ evalSeq prog es = do
 evalVarExpr :: VarName -> Environment
 evalVarExpr v = do
     δ <- getStack
-    return $ Val $ getValFromStack v δ
+    return $ getValFromStack v δ
 
 evalAsgn :: Prog -> VarName -> Expr -> Environment
 evalAsgn prog lhs rhs = do
@@ -148,16 +148,23 @@ evalFieldWrite prog obj name expr = do
 
 evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment
 evalInvoc prog e md es = do
-    o        <- evalExpr prog e
+    o <- evalExpr prog e
     case o of
         ValNull -> error "method invocation on null object"
         Val o'  -> do
             vs       <- mapM (evalExpr prog) es
-            oldStack <- getStack                    -- remember stack pointer
-            let className = tName $ oType o'
-            let mDict = methodDict $ getClass prog className
-            let (MDV sig params body vDict) = fromMaybe ("class " ++ className ++ " does not contain method " ++ md) $ getVal md mDict
-            let newStackFrame = StackFrame o' $ error ""
-            putStack $ newStackFrame : oldStack     -- push new stack frame
-            putStack oldStack                       -- pop stack frame
-            return $ error ""
+            oldStack <- getStack                            -- remember stack pointer
+            let className                 = tName $ oType o'
+                mDict                     = methodDict $ getClass prog className
+                noMethodMsg               = "class " ++ className ++ " does not contain method " ++ md
+                (MDV _ params body vDict) = fromMaybe noMethodMsg $ getVal md mDict
+                paramNames                = map vName $ filter (/= This) params
+                argsToVals                = newMap $ paramNames `zip` vs
+                locMap                    = Map.mapKeys vName $ Map.filterWithKey (\k _ -> k /= This) vDict
+                locsToNull                = Map.map (\_ -> ValNull) locMap
+                newStackFrame             = StackFrame o' $ Map.union argsToVals locsToNull
+                in do
+                    putStack $ newStackFrame : oldStack     -- push new stack frame
+                    v' <- evalExpr prog body
+                    putStack oldStack                       -- pop stack frame
+                    return v'
