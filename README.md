@@ -64,10 +64,13 @@ memory management:
 
 Each object is assigned a _stickiness_ degree. The stickiness is an overapproximation of the number
  of references to the object. 
-When an object is created its stickiness is set to zero.
-An object can be freed if its stickiness is <= 1, and if the only reference to the object is a variable
-that is popped from the stack. 
-Whenever there is an assignment in which the object appears
-on the right-hand side, the object stickiness increases by one.
 If the object is sticky we can only free it if the object's
 owner context is `rep` and the object's owner was freed.
+
+- When an object is created its stickiness is set to zero.
+- Whenever there is an assignment to a local variable in which the object appears
+  on the right-hand side, the object stickiness increases by one.
+- If there is an assignment to a field the stickiness increases by two.
+
+An object can be freed if its stickiness is <= 1, and if the only reference to the object is a variable
+that is popped from the stack. 
