@@ -1,11 +1,14 @@
 module Eval (eval) where
 
+import Control.Monad (when)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import AstTypes
 import CollectionFuncs
 import State
+
+doCollect = True
 
 -- object identifier
 data O = O { oRef :: Int, oType :: OwnershipType }
@@ -86,19 +89,35 @@ popStackFrame = do
     δ <- getStack
     case δ of
         []     -> error "attempt to pop stack frame from empty stack"
-        _ : fs -> putStack fs
+        f : fs -> do
+            freeObjects f
+            putStack fs
+
+freeObjects :: StackFrame -> RedState ()
+freeObjects (StackFrame _ stackVal) =
+    when doCollect $
+        mapM_ freeObject $ Map.elems stackVal
+            where freeObject :: Value -> RedState ()
+                  freeObject ValNull = return ()
+                  freeObject (Val o) = do
+                    s <- getStore
+                    let (F _ sticky) = getFromStore o s
+                    when (sticky <= 1) $ putStore $ Map.delete o s
 
 pushStackFrame :: StackFrame -> RedState ()
 pushStackFrame f = do
     δ <- getStack
     putStack $ f : δ
 
+getFromStore :: O -> S -> F
+getFromStore o = fromMaybe ("object " ++ show o ++ " is not in the store") . getVal o
+
 -- increase the stickiness of an object
 makeSticky :: Value -> RedState ()
 makeSticky ValNull = return ()
 makeSticky (Val o) = do
     s <- getStore
-    let (F f sticky) = fromMaybe ("object " ++ show o ++ " is not in the store") $ getVal o s
+    let (F f sticky) = getFromStore o s
     putStore $ Map.insert o (F f $ sticky + 1) s
 
 ---------------------
@@ -171,7 +190,7 @@ evalFieldRead prog obj name = do
         ValNull -> error $ "attempt to read field " ++ name ++ " on null receiver"
         Val o'  -> do
             s <- getStore
-            let (F f _) = fromMaybe ("store does not contain object " ++ show o') $ getVal o' s
+            let (F f _) = getFromStore o' s
             let v = fromMaybe ("object " ++ show o' ++ " does not contain field " ++ name) $ getVal name f
             return v
 
@@ -183,7 +202,7 @@ evalFieldWrite prog obj name expr = do
             Val o' -> do
                 v <- evalExpr prog expr
                 s <- getStore
-                let (F f sticky) = fromMaybe (error $ "object " ++ show o' ++ " not in the store") $ getVal o' s
+                let (F f sticky) = getFromStore o' s
                 putStore $ Map.insert o' (F (Map.insert name v f) $ sticky) s
                 makeSticky v
                 return v
