@@ -61,12 +61,12 @@ This version of ownership types is not very amicable to garbage collection but
 Gregor had the following idea of taking advantage of this type system for automatic
 memory management:
 
-When an object is created it is marked as not _sticky_.
-This means that there is only one reference to it, and it
-can be freed if the reference is a variable that is popped
-from the stack.
-
+Each object is assigned a _stickiness_ degree. The stickiness is an overapproximation of the number
+ of references to the object. 
+When an object is created its stickiness is set to zero.
+An object can be freed if its stickiness is <= 1, and if the only reference to the object is a variable
+that is popped from the stack. 
 Whenever there is an assignment in which the object appears
-on the right-hand side, the object becomes _sticky_.
+on the right-hand side, the object stickiness increases by one.
 If the object is sticky we can only free it if the object's
 owner context is `rep` and the object's owner was freed.

@@ -17,14 +17,16 @@ data Value = Val O
     deriving (Eq, Show)
 
 -- object (map from field names to values)
--- when an object is created it is marked as not ``sticky''
--- meaning that there is only one reference to it, and it
--- can be freed if the reference is a variable that is popped
+-- when an object is created its ``stickiness'' is set to 0;
+-- the stickiness of an object is an overapproximation of
+-- the number of references to it.
+-- an object can be freed if its stickiness is <= 1, and if
+-- the only reference to the object is a variable that is popped
 -- from the stack.
--- if the object is sticky we can only free it if the object's
+-- if the object is stickier we can only free it if the object's
 -- owner context is `rep` and the object's owner was freed.
 data F = F { fieldMap :: Map.Map Name Value,
-             sticky :: Bool }
+             sticky :: Int }
     deriving (Eq, Show)
 
 -- a stack frame
@@ -127,7 +129,7 @@ evalNew prog t = do
     let o = newO s t
     let fields = dom $ fieldDict (getClass prog (tName t))
     let fieldMap = newMap [(f, ValNull) | f <- Set.toList fields]
-    putStore $ Map.union s $ Map.singleton o $ F fieldMap False
+    putStore $ Map.union s $ Map.singleton o $ F fieldMap 0
     return $ Val o
 
 evalNull :: Environment
