@@ -36,13 +36,14 @@ Note that the test programs also slightly differ from the paper to avoid null po
 The example programs in the paper illustrate the restrictiveness of ownership types
 by including statements that would be allowed in a language like Java, but will
 fail in the presence of the ownership type system.
-Those lines are commented out in the test programs here, and you can uncomment them
+
+The lines with the failing statements are commented out in the test programs, and you can uncomment them
 to see that the type checking works.
 
 ### Reduction
 According to the syntax, a program consists of a list of classes, a list of local variables,
 and a main expression to be evaluated.
-When running a program `owni` will output the contents of the store as they are after
+When running a program, the interpreter will output the contents of the store after
 the expression has been evaluated.
 
 ## Notes on the language
@@ -54,7 +55,7 @@ This language differs from the one in the paper in that it aims to support typin
 and for `void` methods.
 `void` methods must end with the `end` keyword; note that `void` is called `Unit` in the syntax.
 
-To invoke a field `x` inside an object it is necessary to explicitly use `this.x`.
+To invoke a field `x` inside an object it is necessary to explicitly invoke it on `this`.
 
 ## Garbage collection
 This version of ownership types is not very amicable to garbage collection but

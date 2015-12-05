@@ -93,6 +93,14 @@ pushStackFrame f = do
     δ <- getStack
     putStack $ f : δ
 
+-- increase the stickiness of an object
+makeSticky :: Value -> RedState ()
+makeSticky ValNull = return ()
+makeSticky (Val o) = do
+    s <- getStore
+    let (F f sticky) = fromMaybe ("object " ++ show o ++ " is not in the store") $ getVal o s
+    putStore $ Map.insert o (F f $ sticky + 1) s
+
 ---------------------
 -- Reduction rules --
 ---------------------
@@ -153,6 +161,7 @@ evalAsgn prog lhs rhs = do
     o <- evalExpr prog rhs
     δ <- getStack
     putStack $ pushOnStack lhs o δ
+    makeSticky o
     return o
 
 evalFieldRead :: Prog -> Expr ->  Name -> Environment
