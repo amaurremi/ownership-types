@@ -17,7 +17,14 @@ data Value = Val O
     deriving (Eq, Show)
 
 -- object (map from field names to values)
-type F = Map.Map Name Value
+-- when an object is created it is marked as not ``sticky''
+-- meaning that there is only one reference to it, and it
+-- can be freed if the reference is a variable that is popped
+-- from the stack.
+-- if the object is sticky we can only free it if the object's
+-- owner context is `rep` and the object's owner was freed.
+data F = F { fieldMap :: Map.Map Name Value,
+             sticky :: Bool }
 
 -- a stack frame
 data StackFrame = StackFrame { thisVal  :: O,
@@ -118,7 +125,8 @@ evalNew prog t = do
     s <- getStore
     let o = newO s t
     let fields = dom $ fieldDict (getClass prog (tName t))
-    putStore $ Map.union s $ Map.singleton o $ newMap [(f, ValNull) | f <- Set.toList fields]
+    let fieldMap = newMap [(f, ValNull) | f <- Set.toList fields]
+    putStore $ Map.union s $ Map.singleton o $ F fieldMap False
     return $ Val o
 
 evalNull :: Environment
@@ -151,7 +159,7 @@ evalFieldRead prog obj name = do
         ValNull -> error $ "attempt to read field " ++ name ++ " on null receiver"
         Val o'  -> do
             s <- getStore
-            let f = fromMaybe ("store does not contain object " ++ show o') $ getVal o' s
+            let (F f _) = fromMaybe ("store does not contain object " ++ show o') $ getVal o' s
             let v = fromMaybe ("object " ++ show o' ++ " does not contain field " ++ name) $ getVal name f
             return v
 
@@ -163,8 +171,8 @@ evalFieldWrite prog obj name expr = do
             Val o' -> do
                 v <- evalExpr prog expr
                 s <- getStore
-                let f = fromMaybe (error $ "object " ++ show o' ++ " not in the store") $ getVal o' s
-                putStore $ Map.insert o' (Map.insert name v f) s
+                let (F f sticky) = fromMaybe (error $ "object " ++ show o' ++ " not in the store") $ getVal o' s
+                putStore $ Map.insert o' (F (Map.insert name v f) sticky) s
                 return v
 
 evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment

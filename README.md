@@ -6,10 +6,10 @@ as described in the original [paper](http://citeseerx.ist.psu.edu/viewdoc/summar
 The implemented language is based on S-expressions.
 This table shows the correspondence between the language implemented here and described in the paper.
 
-|                | Syntax      | Type system    | Reduction rules |
-|----------------|-------------|----------------|-----------------|
-| Implementation | `Parser.hs` | `TypeCheck.hs` | `Eval.hs`       |
-| Paper          | Page 52     | Figure 4       | Figure 5        |
+|                | Syntax      | Type system    | Reduction rules | Garbage collection (start) |
+|----------------|-------------|----------------|-----------------|----------------------------|
+| Implementation | `Parser.hs` | `TypeCheck.hs` | `Eval.hs`       | `Eval.hs`                  |
+| Paper          | Page 52     | Figure 4       | Figure 5        |                            |
 
 ## Set Up
 1. Install the [Haskell Platform](https://www.haskell.org/platform/).
@@ -45,7 +45,7 @@ and a main expression to be evaluated.
 When running a program `owni` will output the contents of the store as they are after
 the expression has been evaluated.
 
-## Language Notes
+## Notes on the language
 The example programs in the paper use syntax that is not supported by the language
 described in the paper. In particular, there are no `void` methods, `null` type checking is not complete,
 there are no conditional statements and boolean operations.
@@ -55,3 +55,18 @@ and for `void` methods.
 `void` methods must end with the `end` keyword; note that `void` is called `Unit` in the syntax.
 
 To invoke a field `x` inside an object it is necessary to explicitly use `this.x`.
+
+## Garbage collection
+This version of ownership types is not very amicable to garbage collection but
+Gregor had the following idea of taking advantage of this type system for automatic
+memory management:
+
+When an object is created it is marked as not _sticky_.
+This means that there is only one reference to it, and it
+can be freed if the reference is a variable that is popped
+from the stack.
+
+Whenever there is an assignment in which the object appears
+on the right-hand side, the object becomes _sticky_.
+If the object is sticky we can only free it if the object's
+owner context is `rep` and the object's owner was freed.
