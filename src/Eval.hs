@@ -29,8 +29,11 @@ data Value = Val O
 -- if the object is stickier we can only free it if the object's
 -- owner context is `rep` and the object's owner was freed.
 data F = F { fieldMap :: Map.Map Name Value,
-             sticky :: Int }
+             sticky :: Sticky }
     deriving (Eq, Show)
+
+data Sticky = NewObject | NotStickyVar | NotStickyField | Sticky
+    deriving (Eq, Ord, Show)
 
 -- a stack frame
 data StackFrame = StackFrame { thisVal  :: O,
@@ -102,7 +105,7 @@ freeObjects (StackFrame _ stackVal) =
                   freeObject (Val o) = do
                     s <- getStore
                     let (F _ sticky) = getFromStore o s
-                    when (sticky <= 1) $ putStore $ Map.delete o s
+                    when (sticky < Sticky) $ putStore $ Map.delete o s
 
 pushStackFrame :: StackFrame -> RedState ()
 pushStackFrame f = do
@@ -113,12 +116,15 @@ getFromStore :: O -> S -> F
 getFromStore o = fromMaybe ("object " ++ show o ++ " is not in the store") . getVal o
 
 -- increase the stickiness of an object
-makeSticky :: Value -> Int -> RedState ()
-makeSticky ValNull _ = return ()
-makeSticky (Val o) n = do
+makeSticky :: Value -> Bool -> RedState ()
+makeSticky ValNull _           = return ()
+makeSticky (Val o) assignToVar = do
     s <- getStore
     let (F f sticky) = getFromStore o s
-    putStore $ Map.insert o (F f $ sticky + n) s
+        newSticky    = case sticky of
+            NewObject -> if assignToVar then NotStickyVar else NotStickyField
+            _         -> Sticky
+    putStore $ Map.insert o (F f newSticky) s
 
 ---------------------
 -- Reduction rules --
@@ -156,7 +162,7 @@ evalNew prog t = do
     let o = newO s t
     let fields = dom $ fieldDict (getClass prog (tName t))
     let fieldMap = newMap [(f, ValNull) | f <- Set.toList fields]
-    putStore $ Map.union s $ Map.singleton o $ F fieldMap 0
+    putStore $ Map.union s $ Map.singleton o $ F fieldMap NewObject
     return $ Val o
 
 evalNull :: Environment
@@ -180,7 +186,7 @@ evalAsgn prog lhs rhs = do
     o <- evalExpr prog rhs
     δ <- getStack
     putStack $ pushOnStack lhs o δ
-    makeSticky o 1
+    makeSticky o True
     return o
 
 evalFieldRead :: Prog -> Expr ->  Name -> Environment
@@ -204,7 +210,7 @@ evalFieldWrite prog obj name expr = do
                 s <- getStore
                 let (F f sticky) = getFromStore o' s
                 putStore $ Map.insert o' (F (Map.insert name v f) $ sticky) s
-                makeSticky v 2
+                makeSticky v False
                 return v
 
 evalInvoc :: Prog -> Expr -> Name -> [Expr] -> Environment
