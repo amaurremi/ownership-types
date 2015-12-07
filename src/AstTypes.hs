@@ -2,7 +2,7 @@ module AstTypes where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Data.List (find)
+import Data.List (find, intersperse)
 
 import CollectionFuncs
 
@@ -70,13 +70,25 @@ data OwnershipType = OwnershipType {
                          tCtxs  :: [Context] }
                    | NullType
                    | UnitType
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
+
+instance Show OwnershipType where
+    show NullType = "null-type"
+    show UnitType = "Unit"
+    show (OwnershipType name c cs) = name ++ " <" ++ show c ++ " | " ++ intersperse ',' (show cs) ++ ">"
+
 
 data Context = Context { ctx :: Name }
              | Rep
              | NoRep
              | Owner
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
+
+instance Show Context where
+    show Rep         = "rep"
+    show NoRep       = "norep"
+    show Owner       = "owner"
+    show (Context n) = n
 
 -- method signature type: return type + parameter types
 data Sig = Sig {
