@@ -15,7 +15,9 @@
             ( constructor Unit () ()
                 ( seq
                     ; ref address 3
-                    (= (this fieldGc) (new (Gc rep ())))           ; should be gc'ed because it's a single assignment to a rep field
+                    (= (this fieldGc) (new (Gc rep ())))           ; should be gc'ed because it's an assignment to a rep field,
+                                                                   ; even though it has more than one assignment
+                    (= (this fieldGc) (this fieldGc))
                     ; ref address 4
                     (= (this fieldNotGc) (new (NotGc norep ())))   ; shouldn't be gc'ed because it's an assignment to a norep field
                 )

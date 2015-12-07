@@ -62,10 +62,10 @@ Garbage collection can be turned on and off with the `doCollect` flag in `Eval.h
 It is turned off by default.
 
 This version of ownership types is not very amicable to garbage collection but
-Gregor had the following idea of taking advantage of this type system for automatic
-memory management:
+[Gregor](http://the.gregor.institute) had the following idea of taking advantage of this type system for automatic
+memory management by assigning each object a _stickiness_ degree.
 
-Each object is assigned a _stickiness_ degree. The stickiness is an overapproximation of the number
+Here the stickiness degree is used as an overapproximation of the number
  of references to the object.
 If the object is sticky we can only free it if the object's
 owner context is `rep` and the object's owner was freed.
