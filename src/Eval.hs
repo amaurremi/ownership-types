@@ -138,7 +138,7 @@ eval p = fst $ snd $ runState (evalProg p) (Map.empty, [])
 evalProg :: Prog -> Environment
 evalProg prog = do
     let locals = newMap $ map (\(VarDec t n) -> (VarName n, t)) $ progVarDecs prog
-    let frame  = createStackFrame (O 0 NullType) [] [] $ locals
+        frame  = createStackFrame (O 0 NullType) [] [] $ locals
     pushStackFrame frame
     result <- evalExpr prog $ progExpr prog
     popStackFrame
@@ -160,8 +160,8 @@ evalNew :: Prog -> OwnershipType -> Environment
 evalNew prog t = do
     s <- getStore
     let o = newO s t
-    let fields = dom $ fieldDict (getClass prog (tName t))
-    let fieldMap = newMap [(f, ValNull) | f <- Set.toList fields]
+        fields = dom $ fieldDict (getClass prog (tName t))
+        fieldMap = newMap [(f, ValNull) | f <- Set.toList fields]
     putStore $ Map.union s $ Map.singleton o $ F fieldMap NewObject
     return $ Val o
 
@@ -197,7 +197,7 @@ evalFieldRead prog obj name = do
         Val o'  -> do
             s <- getStore
             let (F f _) = getFromStore o' s
-            let v = fromMaybe ("object " ++ show o' ++ " does not contain field " ++ name) $ getVal name f
+                v = fromMaybe ("object " ++ show o' ++ " does not contain field " ++ name) $ getVal name f
             return v
 
 evalFieldWrite :: Prog -> Expr -> Name -> Expr -> Environment
@@ -225,11 +225,10 @@ evalInvoc prog e md es = do
                 noMethodMsg               = "class " ++ className ++ " does not contain method " ++ md
                 (MDV _ params body vDict) = fromMaybe noMethodMsg $ getVal md mDict
                 newStackFrame             = createStackFrame o' params vs vDict
-                in do
-                    pushStackFrame newStackFrame
-                    v' <- evalExpr prog body
-                    popStackFrame
-                    return v'
+            pushStackFrame newStackFrame
+            v' <- evalExpr prog body
+            popStackFrame
+            return v'
 
 createStackFrame this params vs vDict =
     let paramNames = map vName $ filter (/= This) params

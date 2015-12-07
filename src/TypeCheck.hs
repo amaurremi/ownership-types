@@ -121,11 +121,11 @@ checkInvoc prog sigma gamma obj name args = do
     objT  <- checkExpr prog sigma gamma obj
     argTs <- mapM (checkExpr prog sigma gamma) args
     let subst                  = ψ prog objT
-    let mDict                  = methodDict $ getClass prog $ tName objT
-    let Sig mArgTypes mRetType = case getVal name mDict of
+        mDict                  = methodDict $ getClass prog $ tName objT
+        Sig mArgTypes mRetType = case getVal name mDict of
             Just m  -> mdvSig m
             Nothing -> error $ "method with name " ++ name ++ " not in dictionary for class " ++ tName objT
-    let expArgTs               = map (σ subst) mArgTypes
+        expArgTs               = map (σ subst) mArgTypes
         staticVisibility       = all (sv obj) (mRetType : mArgTypes)
         matchingTypes          = foldl (&&) True $ zipWith typesMatch expArgTs argTs
         invocErrorInfo         = "\nreceiver expression: " ++ show obj ++ "\ncallee name: " ++ name
@@ -159,11 +159,10 @@ checkExpr prog sigma gamma e = case e of
         return UnitType
 
 checkMethod :: P -> Σ -> Γ -> Method -> Either String OwnershipType
-checkMethod prog sigma gamma (Method t n args vars e) =
+checkMethod prog sigma gamma (Method t n args vars e) = do
     let types    = snd . unzip . varDictList
         argTypes = types args
         varTypes = types vars
         newGamma = gamma `Map.union` (varDict args) `Map.union` (varDict vars)
-    in do
-        mapM_ (checkType prog sigma) $ t : argTypes ++ varTypes
-        checkExpr prog sigma newGamma e
+    mapM_ (checkType prog sigma) $ t : argTypes ++ varTypes
+    checkExpr prog sigma newGamma e
