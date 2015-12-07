@@ -4,23 +4,26 @@
 
 ; CLASSES
 (
-    ( class Gc () () () )
-    ( class NotGc () () () )
-    ( class X ()
-            ; fields
-            (
-                (fieldGc (Gc rep ()))
-                (fieldNotGc (NotGc norep ()))
+    ( class Gc ()
+        ; fields
+        (
+            (fieldGc (Gc rep ()))
+            (fieldNotGc (NotGc norep ()))
+        )
+        ; methods
+        (
+            ( constructor Unit () ()
+                ( seq
+                    (= (this fieldGc) (new (Gc rep ())))           ; should be gc'ed because it's a single assignment to a rep field
+                    (= (this fieldNotGc) (new (NotGc norep ())))   ; shouldn't be gc'ed because it's an assignment to a norep field
+                )
             )
+        )
+    )
+    ( class NotGc () () () )
+    ( class X () ()
             ; methods
             (
-                (
-                    constructor Unit () ()
-                        ( seq
-                            (= (this fieldGc) (new (Gc rep ())))           ; should be gc'ed because it's a single assignment to a rep field
-                            (= (this fieldNotGc) (new (NotGc norep ())))   ; shouldn't be gc'ed because it's an assignment to a norep field
-                        )
-                )
                 (
                     foo Unit ()
                         ; local vars
@@ -31,7 +34,8 @@
                         )
                         ; expression
                         ( seq
-                           (= localGc (new (Gc norep ())))              ; should be gc'ed after return from foo because it's a single assignment to a local var
+                           (= localGc (new (Gc norep ())))             ; should be gc'ed after return from foo because it's a single assignment to a local var
+                           (invoc localGc constructor ())
                            (= localNotGc1 (new (NotGc norep ())))
                            (= localNotGc2 localNotGc1)                 ; shouldn't be gc'ed because the object is being assigned twice
                         )
@@ -46,6 +50,5 @@
 ; MAIN EXPRESSION
 (seq
     (= x (new (X norep ())))
-    (invoc x constructor ())
     (invoc x foo ())
 )

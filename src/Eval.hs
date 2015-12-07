@@ -15,12 +15,16 @@ data O = O { oRef :: Int, oType :: OwnershipType }
     deriving (Eq, Ord)
 
 instance Show O where
-    show (O oref otype) = "reference " ++ show oref ++ " of type " ++ show otype
+    show (O oref otype) = "ref address: " ++ show oref ++ ", type: " ++ show otype
 
 -- an object identifier or null
 data Value = Val O
            | ValNull
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show Value where
+    show ValNull = "null"
+    show (Val o) = show o
 
 -- object (map from field names to values)
 -- when an object is created its ``stickiness'' is set to 0;
@@ -36,7 +40,8 @@ data F = F { fieldMap :: Map.Map Name Value,
     deriving (Eq)
 
 instance Show F where
-    show (F f s) = "field map: " ++ show (Map.toList f) ++ ", " ++ show s
+    show (F f s) = "field map: " ++ showMapField f ++ ", " ++ show s
+        where showMapField m = foldl (\s (name, ref) -> "\n   " ++ name ++ " -> " ++ show ref) "" $ Map.toList m
 
 data Sticky = NewObject | NotStickyVar | NotStickyField | Sticky
     deriving (Eq, Ord)

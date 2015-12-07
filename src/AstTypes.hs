@@ -2,7 +2,7 @@ module AstTypes where
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Data.List (find, intersperse)
+import Data.List (find, intercalate)
 
 import CollectionFuncs
 
@@ -75,7 +75,10 @@ data OwnershipType = OwnershipType {
 instance Show OwnershipType where
     show NullType = "null-type"
     show UnitType = "Unit"
-    show (OwnershipType name c cs) = name ++ " <" ++ show c ++ " | " ++ intersperse ',' (show cs) ++ ">"
+    show (OwnershipType name c cs) = name ++ " <" ++ show c ++ showCs cs ++ ">"
+        where showCs :: [Context] -> String
+              showCs [] = ""
+              showCs cs = " | " ++ (intercalate ", " $ map show cs)
 
 
 data Context = Context { ctx :: Name }
