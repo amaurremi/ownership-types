@@ -83,17 +83,10 @@ and
   on the right-hand side, the object stickiness is increased.
 
 An object can be freed if
-
-- its stickiness `single-variable-assignment` and the variable
+- its stickiness is `single-variable-assignment` and the variable
   it is assigned to got popped from the stack;
-- its stickiness is `single-field-assignment` and the field it is assigned to
-  got freed;
 - its owner got freed.
 
-Currently implemented:
-- run-time objects have a stickiness degree;
-- at each assignment the stickiness is increased as described above;
-- when we pop a stack frame, we remove the objects from the store whose stickiness is
-  `single-variable-assignment`.
+
 
 The rest still needs to be implemented, and the current implementation needs to be tested.
