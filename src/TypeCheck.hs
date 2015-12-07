@@ -62,13 +62,12 @@ typeCheck prog@(Prog defns varDecs expr) = do
     return prog
 
 checkClass :: P -> Defn -> Either String ()
-checkClass prog defn@(Defn n cs fs ms) =
+checkClass prog defn@(Defn n cs fs ms) = do
     let fDict = fieldDict defn
         sigma = Set.insert Owner $ newSet cs
         gamma = Map.singleton This $ OwnershipType n Owner cs
-    in do
-        mapM_ (checkType prog sigma) $ vals fDict
-        mapM_ (checkMethod prog sigma gamma) ms
+    mapM_ (checkType prog sigma) $ vals fDict
+    mapM_ (checkMethod prog sigma gamma) ms
 
 checkType :: P -> Σ -> OwnershipType -> Either String OwnershipType
 checkType prog sigma o@(OwnershipType _ t ts) =
