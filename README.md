@@ -6,10 +6,10 @@ as described in the original [paper](http://citeseerx.ist.psu.edu/viewdoc/summar
 The implemented language is based on S-expressions.
 This table shows the correspondence between the language implemented here and described in the paper.
 
-|                | Syntax      | Type system    | Reduction rules | Garbage collection (start) |
-|----------------|-------------|----------------|-----------------|----------------------------|
-| Implementation | `Parser.hs` | `TypeCheck.hs` | `Eval.hs`       | `Eval.hs`                  |
-| Paper          | Page 52     | Figure 4       | Figure 5        |                            |
+|                | Syntax      | Type system    | Reduction rules | Garbage collection |
+|----------------|-------------|----------------|-----------------|--------------------|
+| Implementation | `Parser.hs` | `TypeCheck.hs` | `Eval.hs`       | `Eval.hs`          |
+| Paper          | Page 52     | Figure 4       | Figure 5        |                    |
 
 ## Set Up
 1. Install the [Haskell Platform](https://www.haskell.org/platform/).

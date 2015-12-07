@@ -115,19 +115,15 @@ popStackFrame = do
             putStack fs
 
 freeObjects :: StackFrame -> RedState ()
-freeObjects (StackFrame _ stackVal) =
-    when doCollect $ mapM_ freeObject $ Map.elems stackVal
-        where freeObject :: Value -> RedState ()
-              freeObject ValNull = return ()
-              freeObject (Val o) = do
-                s <- getStore
-                let (F fs sticky) = getFromStore o s
-                    toFree        = filter isRep $ vals fs
-                when (sticky < Sticky) $ putStore $ Map.delete o s
-                mapM_ freeObject toFree
-              isRep :: Value -> Bool
-              isRep ValNull                            = False
-              isRep (Val (O _ (OwnershipType _ c cs))) = Rep `elem` c : cs
+freeObjects (StackFrame _ stackVal) = when doCollect $ mapM_ freeObject $ Map.elems stackVal
+    where freeObject ValNull = return ()
+          freeObject (Val o) = do
+            s <- getStore
+            let (F fs sticky) = getFromStore o s
+            when (sticky < Sticky) $ putStore $ Map.delete o s
+            mapM_ freeObject $ filter isRep $ vals fs
+          isRep ValNull                            = False
+          isRep (Val (O _ (OwnershipType _ c cs))) = Rep `elem` c : cs
 
 pushStackFrame :: StackFrame -> RedState ()
 pushStackFrame f = do
