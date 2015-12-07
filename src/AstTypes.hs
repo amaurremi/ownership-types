@@ -134,6 +134,6 @@ varDict = newMap . varDictList
 getClass :: Prog -> Name -> Defn
 getClass prog name =
     let defs = defns prog
-    in case find (\def -> className def == name) defs of
+    in case find (\def -> className def == name) $ defns prog of
         Just defn -> defn
         Nothing   -> error $ "no class of type " ++ name ++ "\nAvailable classes: " ++ unwords (map className defs)

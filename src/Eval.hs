@@ -8,7 +8,7 @@ import AstTypes
 import CollectionFuncs
 import State
 
-doCollect = False
+doCollect = True
 
 -- object identifier
 data O = O { oRef :: Int, oType :: OwnershipType }
@@ -121,9 +121,13 @@ freeObjects (StackFrame _ stackVal) =
               freeObject ValNull = return ()
               freeObject (Val o) = do
                 s <- getStore
-                let (F _ sticky) = getFromStore o s
-
+                let (F fs sticky) = getFromStore o s
+                    toFree        = filter isRep $ vals fs
                 when (sticky < Sticky) $ putStore $ Map.delete o s
+                mapM_ freeObject toFree
+              isRep :: Value -> Bool
+              isRep ValNull                            = False
+              isRep (Val (O _ (OwnershipType _ c cs))) = Rep `elem` c : cs
 
 pushStackFrame :: StackFrame -> RedState ()
 pushStackFrame f = do
