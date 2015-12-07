@@ -10,6 +10,12 @@ import Data.Maybe
 (⊆) :: Ord a => Set.Set a -> Set.Set a -> Bool
 (⊆) = Set.isSubsetOf
 
+(∈) :: Ord a => a -> Set.Set a -> Bool
+(∈) = Set.member
+
+(∪) :: Ord a => Set.Set a -> Set.Set a -> Set.Set a
+(∪) = Set.union
+
 dom = Map.keysSet
 
 keyVals = Map.assocs

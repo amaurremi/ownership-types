@@ -72,14 +72,12 @@ checkClass prog defn@(Defn n cs fs ms) =
 
 checkType :: P -> Σ -> OwnershipType -> Either String OwnershipType
 checkType prog sigma o@(OwnershipType _ t ts) =
-    let newSigma = newSet [Rep, NoRep] `Set.union` sigma
-    in if (t `Set.member` newSigma) && (newSet ts `Set.isSubsetOf` newSigma)
+    let newSigma = newSet [Rep, NoRep] ∪ sigma
+    in if (t ∈ newSigma) && (newSet ts ⊆ newSigma)
        then return o
        else Left $ "checkType error: " ++ show o
-checkType _ _ UnitType                        =
-    return UnitType
-checkType _ _ NullType                        =
-    return NullType
+checkType _ _ UnitType                        = return UnitType
+checkType _ _ NullType                        = return NullType
 
 checkAsgn prog sigma gamma x e =
     case getVal x gamma of
