@@ -36,14 +36,14 @@ data F = F { fieldMap :: Map.Map Name Value,
     deriving (Eq)
 
 instance Show F where
-    show (F f s) = "field map: " ++ show (Map.toList f) ++ ", stickiness: " ++ show s
+    show (F f s) = "field map: " ++ show (Map.toList f) ++ ", " ++ show s
 
 data Sticky = NewObject | NotStickyVar | NotStickyField | Sticky
     deriving (Eq, Ord)
 
 instance Show Sticky where
     show s = case s of
-        NewObject      -> "new object (0)"
+        NewObject      -> "stickiness 0"
         NotStickyVar   -> "not sticky variable (1)"
         NotStickyField -> "not sticky field (1)"
         Sticky         -> "sticky (>1)"

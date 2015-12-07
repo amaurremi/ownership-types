@@ -41,7 +41,11 @@
 )
 
 ; LOCAL VARS FOR MAIN
-()
+((x (X norep ())))
 
 ; MAIN EXPRESSION
-(invoc (new (X norep ())) foo ())
+(seq
+    (= x (new (X norep ())))
+    (invoc x constructor ())
+    (invoc x foo ())
+)
