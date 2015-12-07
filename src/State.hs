@@ -8,7 +8,7 @@ instance Monad (State s) where
                              in runState (k a) s'
 
 instance Applicative (State s) where
-    pure x = error ""
+    pure x = return x
     x <*> y = error ""
 
 instance Functor (State s) where

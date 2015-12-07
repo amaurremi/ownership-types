@@ -98,14 +98,13 @@ popStackFrame = do
 
 freeObjects :: StackFrame -> RedState ()
 freeObjects (StackFrame _ stackVal) =
-    when doCollect $
-        mapM_ freeObject $ Map.elems stackVal
-            where freeObject :: Value -> RedState ()
-                  freeObject ValNull = return ()
-                  freeObject (Val o) = do
-                    s <- getStore
-                    let (F _ sticky) = getFromStore o s
-                    when (sticky < Sticky) $ putStore $ Map.delete o s
+    when doCollect $ mapM_ freeObject $ Map.elems stackVal
+        where freeObject :: Value -> RedState ()
+              freeObject ValNull = return ()
+              freeObject (Val o) = do
+                s <- getStore
+                let (F _ sticky) = getFromStore o s
+                when (sticky < Sticky) $ putStore $ Map.delete o s
 
 pushStackFrame :: StackFrame -> RedState ()
 pushStackFrame f = do
