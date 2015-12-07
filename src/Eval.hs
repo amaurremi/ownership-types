@@ -12,7 +12,10 @@ doCollect = False
 
 -- object identifier
 data O = O { oRef :: Int, oType :: OwnershipType }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
+
+instance Show O where
+    show (O oref otype) = "reference " ++ show oref ++ " of type " ++ show otype
 
 -- an object identifier or null
 data Value = Val O
@@ -30,10 +33,20 @@ data Value = Val O
 -- owner context is `rep` and the object's owner was freed.
 data F = F { fieldMap :: Map.Map Name Value,
              sticky :: Sticky }
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show F where
+    show (F f s) = "field map: " ++ show (Map.toList f) ++ ", stickiness: " ++ show s
 
 data Sticky = NewObject | NotStickyVar | NotStickyField | Sticky
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
+
+instance Show Sticky where
+    show s = case s of
+        NewObject      -> "new object (0)"
+        NotStickyVar   -> "not sticky variable (1)"
+        NotStickyField -> "not sticky field (1)"
+        Sticky         -> "sticky (>1)"
 
 -- a stack frame
 data StackFrame = StackFrame { thisVal  :: O,
