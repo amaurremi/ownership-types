@@ -72,9 +72,10 @@ checkClass prog defn@(Defn n cs fs ms) = do
 checkType :: P -> Σ -> OwnershipType -> Either String OwnershipType
 checkType prog sigma o@(OwnershipType _ t ts) =
     let newSigma = newSet [Rep, NoRep] ∪ sigma
-    in if (t ∈ newSigma) && (newSet ts ⊆ newSigma)
+        oldSigma = t +++ (newSet ts)
+    in if (oldSigma ⊆ newSigma)
        then return o
-       else Left $ "checkType error: " ++ show o
+       else Left $ "contexts " ++ show oldSigma ++ " not in context scope; accepted contexts: " ++ show newSigma
 checkType _ _ UnitType                        = return UnitType
 checkType _ _ NullType                        = return NullType
 
