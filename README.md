@@ -59,7 +59,7 @@ To invoke a field `x` inside an object it is necessary to explicitly invoke it o
 
 ## Garbage collection
 Garbage collection can be turned on and off with the `doCollect` flag in `Eval.hs`.
-It is turned off by default.
+It is turned on by default.
 
 This version of ownership types is not very amicable to garbage collection but
 [Gregor](http://the.gregor.institute) had the following idea of taking advantage of this type system for automatic
@@ -85,8 +85,6 @@ and
 An object can be freed if
 - its stickiness is `single-variable-assignment` and the variable
   it is assigned to got popped from the stack;
-- its owner got freed.
+- its owner got freed and it contains a `rep` context in its ownership type.
 
-
-
-The rest still needs to be implemented, and the current implementation needs to be tested.
+A test for the garbage collector is the `test-programs/gc-test.s` program.
