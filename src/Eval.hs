@@ -122,6 +122,7 @@ freeObjects (StackFrame _ stackVal) =
               freeObject (Val o) = do
                 s <- getStore
                 let (F _ sticky) = getFromStore o s
+
                 when (sticky < Sticky) $ putStore $ Map.delete o s
 
 pushStackFrame :: StackFrame -> RedState ()

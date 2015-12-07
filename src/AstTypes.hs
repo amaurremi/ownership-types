@@ -108,9 +108,9 @@ type VarDict = Map.Map VarName OwnershipType
 type FieldDict = Map.Map Name OwnershipType
 
 data MethodDictVal = MDV {
-    mdvSig :: Sig,
-    mdvArgs :: [VarName],
-    mdvExpr :: Expr,
+    mdvSig     :: Sig,
+    mdvArgs    :: [VarName],
+    mdvExpr    :: Expr,
     mdvVarDict :: VarDict
 }
 

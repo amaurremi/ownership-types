@@ -18,5 +18,5 @@ main = do
     case result of
         Left error -> print error
         Right prog -> do
-            print "Store contents:"
+            putStrLn "Store contents:"
             putStrLn $ unlines $ map show $ toList $ eval prog
